@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4B2E73">
+<title>Reserva tu cita</title>
+<style>
+:root{--bg:#F6F3F8;--card:#fff;--ink:#2A2035;--muted:#6C6179;--line:#E7DFEC;--brand:#4B2E73;--soft:#EBE2F6;--ok:#1F7A4D;--ok-bg:#DDF3E8;--bad:#B02A2A;--bad-bg:#FBE0E0;--warn-bg:#FFF0C7;--warn:#7A5200;--font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--font);padding:0 16px calc(32px + env(safe-area-inset-bottom,0px))}
+[hidden]{display:none!important}
+main{max-width:520px;margin:0 auto;padding-top:calc(22px + env(safe-area-inset-top,0px));display:grid;gap:16px}
+h1{margin:0;font-size:24px;line-height:1.15;color:var(--brand)}
+h2{margin:0 0 12px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sub{color:var(--muted);margin:4px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(42,32,53,.05)}
+.picks{display:grid;gap:8px}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pick small{color:var(--muted);font-size:13px;flex:none}
+.pick[aria-pressed="true"]{border-color:var(--brand);background:var(--soft)}
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
+.days::-webkit-scrollbar{display:none}
+.day{flex:none;display:grid;justify-items:center;gap:2px;width:56px;padding:9px 0;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:inherit;cursor:pointer}
+.day span{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.day b{font-size:20px;line-height:1.1}
+.day[aria-pressed="true"]{border-color:var(--brand);background:var(--soft)}
+.day:disabled{opacity:.35;cursor:not-allowed}
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.slot{min-height:44px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.slot[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.slot:disabled{opacity:.3;text-decoration:line-through;cursor:not-allowed}
+label{display:grid;gap:6px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+input,textarea{font:inherit;font-size:16px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);width:100%;text-transform:none;letter-spacing:0;font-weight:400}
+.form{display:grid;gap:14px}
+.hint{font-size:13.5px;color:var(--muted);margin:8px 0 0}
+.btn{display:block;width:100%;min-height:50px;border:0;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--line)}
+.msg{border-radius:12px;padding:12px 14px;font-size:14px}
+.msg.err{background:var(--bad-bg);color:var(--bad)}
+.status{display:grid;gap:6px}
+.status .big{font-size:18px;font-weight:700}
+.status.wait{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.status.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.status.no{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.summary{display:grid;gap:2px;padding:12px 14px;border-radius:12px;background:var(--soft);font-size:14.5px}
+.foot{text-align:center;color:var(--muted);font-size:13px}
+a.wa{color:var(--brand);font-weight:700}
+</style>
+</head>
+<body>
+<main>
+  <header><h1 id="salon">Reserva tu cita</h1><p class="sub">Elige servicio, día y hora. Te confirmamos la cita en cuanto la revisemos.</p></header>
+  <div id="load" class="card">Cargando…</div>
+  <div id="fatal" class="msg err" hidden></div>
+  <section id="mine" class="card status" hidden></section>
+  <div id="flow" class="grid" hidden style="display:grid;gap:16px">
+    <section class="card"><h2>1 · Servicios</h2><div class="picks" id="svcs"></div><p class="hint" id="total"></p></section>
+    <section class="card"><h2>2 · Día</h2><div class="days" id="days"></div></section>
+    <section class="card" id="timeCard"><h2>3 · Hora</h2><div class="slots" id="slots"></div><p class="hint" id="slotHint">Elige primero servicios y día.</p></section>
+    <section class="card"><h2>4 · Tus datos</h2>
+      <form class="form" id="form" autocomplete="on" novalidate>
+        <label>Nombre<input id="name" type="text" autocomplete="name" placeholder="Nombre y apellido" maxlength="80"></label>
+        <label>Teléfono (WhatsApp)<input id="phone" type="tel" autocomplete="tel" placeholder="+53 5xxx xxxx" maxlength="24"></label>
+        <label>Nota (opcional)<input id="note" type="text" placeholder="Diseño, color, referencia…" maxlength="200"></label>
+        <div class="summary" id="summary" hidden></div>
+        <div class="msg err" id="err" hidden></div>
+        <button class="btn" id="send" type="submit" disabled>Solicitar cita</button>
+      </form>
+    </section>
+  </div>
+  <p class="foot" id="wafoot" hidden></p>
+</main>
+<script>
+(function(){
+'use strict';
+var CFG={apiKey:'AIzaSyC7jMYaBtoZk0Z_SrNvYDEaUlYfu0L8qT8',projectId:'gestion-turnos-salon'};
+var BASE='https://firestore.googleapis.com/v1/projects/'+CFG.projectId+'/databases/(default)/documents';
+var DAYS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'], DAYS3=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var RKEY='turnos-reserva-v1', LEAD=60, HORIZON=28;
+function $(s){return document.querySelector(s);}
+function pad(n){return String(n).padStart(2,'0');}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function parse(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function toMin(t){var p=t.split(':').map(Number);return p[0]*60+p[1];}
+function toTime(m){return pad(Math.floor(m/60))+':'+pad(m%60);}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function longDate(ds){var d=parse(ds);return cap(DAYS[d.getDay()])+' '+d.getDate()+' de '+MONTHS[d.getMonth()];}
+/* ---- Firestore REST ---- */
+function toFS(v){
+  if(typeof v==='string') return {stringValue:v};
+  if(typeof v==='boolean') return {booleanValue:v};
+  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+  if(Array.isArray(v)) return {arrayValue:{values:v.map(toFS)}};
+  var f={};Object.keys(v).forEach(function(k){f[k]=toFS(v[k]);});return {mapValue:{fields:f}};
+}
+function fromFS(x){
+  if('stringValue' in x) return x.stringValue;
+  if('integerValue' in x) return +x.integerValue;
+  if('doubleValue' in x) return x.doubleValue;
+  if('booleanValue' in x) return x.booleanValue;
+  if('arrayValue' in x) return (x.arrayValue.values||[]).map(fromFS);
+  if('mapValue' in x){var o={},f=x.mapValue.fields||{};Object.keys(f).forEach(function(k){o[k]=fromFS(f[k]);});return o;}
+  return null;
+}
+function docToObj(d){var o={},f=(d&&d.fields)||{};Object.keys(f).forEach(function(k){o[k]=fromFS(f[k]);});return o;}
+function api(path,opts){
+  var sep=path.indexOf('?')>-1?'&':'?';
+  return fetch(BASE+path+sep+'key='+CFG.apiKey,opts).then(function(r){
+    if(r.status===404) return null;
+    if(!r.ok) throw new Error('http '+r.status);
+    return r.json();
+  });
+}
+/* ---- estado ---- */
+var cat=null, sel=[], date='', time='', busy={}, busyTok=0, poll=0;
+function randId(){var a=new Uint8Array(12);(window.crypto||window.msCrypto).getRandomValues(a);return Array.prototype.map.call(a,function(b){return ('0'+b.toString(16)).slice(-2);}).join('');}
+function mineGet(){try{return JSON.parse(localStorage.getItem(RKEY)||'null');}catch(e){return null;}}
+function mineSet(v){try{if(v)localStorage.setItem(RKEY,JSON.stringify(v));else localStorage.removeItem(RKEY);}catch(e){}}
+function money(n){return (Math.round(n*100)/100)+' '+(cat&&cat.cur||'$');}
+function selSvcs(){return cat.services.filter(function(s){return sel.indexOf(s.id)>-1;});}
+function totals(){var s=selSvcs();return {n:s.length,dur:s.reduce(function(t,x){return t+x.dur;},0),price:s.reduce(function(t,x){return t+x.price;},0),name:s.map(function(x){return x.name;}).join(' + ')};}
+/* ---- render ---- */
+function renderSvcs(){
+  $('#svcs').innerHTML=cat.services.map(function(s){return '<button type="button" class="pick" data-s="'+esc(s.id)+'" aria-pressed="'+(sel.indexOf(s.id)>-1)+'"><span>'+esc(s.name)+'</span><small>'+s.dur+' min · '+money(s.price)+'</small></button>';}).join('')||'<p class="hint">Todavía no hay servicios disponibles.</p>';
+  var t=totals();
+  $('#total').textContent=t.n?t.n+(t.n===1?' servicio':' servicios')+' · '+t.dur+' min · '+money(t.price):'Puedes elegir más de un servicio.';
+}
+function renderDays(){
+  var h='',d=new Date();d.setHours(0,0,0,0);
+  for(var i=0;i<HORIZON;i++){
+    var ds=iso(d), open=cat.days.indexOf(d.getDay())>-1;
+    h+='<button type="button" class="day" data-d="'+ds+'" aria-pressed="'+(ds===date)+'"'+(open?'':' disabled')+'><span>'+DAYS3[d.getDay()]+'</span><b>'+d.getDate()+'</b><span>'+MONTHS[d.getMonth()].slice(0,3).toUpperCase()+'</span></button>';
+    d.setDate(d.getDate()+1);
+  }
+  $('#days').innerHTML=h;
+}
+function slotsFor(){
+  var t=totals(), out=[];
+  if(!t.n||!date) return null;
+  var items=busy[date]; if(items===undefined) return 'loading';
+  var iv=items.map(function(x){var p=x.split('|');return [toMin(p[0]),toMin(p[0])+(+p[1])];});
+  var now=new Date(), isToday=date===iso(now), nowM=now.getHours()*60+now.getMinutes()+LEAD;
+  for(var m=cat.open;m<cat.close;m+=cat.step){
+    var ok=m+t.dur<=cat.close&&!(isToday&&m<nowM)&&!iv.some(function(b){return m<b[1]&&m+t.dur>b[0];});
+    out.push({m:m,ok:ok});
+  }
+  return out;
+}
+function renderSlots(){
+  var box=$('#slots'), hint=$('#slotHint'), r=slotsFor();
+  if(r===null){box.innerHTML='';hint.textContent='Elige primero servicios y día.';time='';}
+  else if(r==='loading'){box.innerHTML='';hint.textContent='Cargando horas libres…';}
+  else{
+    if(time&&!r.some(function(s){return s.ok&&toTime(s.m)===time;})) time='';
+    box.innerHTML=r.map(function(s){var t=toTime(s.m);return '<button type="button" class="slot" data-t="'+t+'" aria-pressed="'+(t===time)+'"'+(s.ok?'':' disabled')+'>'+t+'</button>';}).join('');
+    hint.textContent=r.some(function(s){return s.ok;})?'Duración total: '+totals().dur+' min.':'No quedan horas libres ese día. Prueba con otro.';
+  }
+  refreshForm();
+}
+function refreshForm(){
+  var t=totals(), sm=$('#summary'), ok=t.n&&date&&time;
+  if(ok){sm.hidden=false;sm.innerHTML='<b>'+esc(longDate(date))+' · '+time+' – '+toTime(toMin(time)+t.dur)+'</b><span>'+esc(t.name)+'</span><span>Total: '+money(t.price)+'</span>';}
+  else sm.hidden=true;
+  $('#send').disabled=!ok;
+}
+function loadBusy(){
+  if(!date||busy[date]!==undefined){renderSlots();return;}
+  var d=date, tok=++busyTok; renderSlots();
+  api('/busy/'+d).then(function(doc){busy[d]=doc?(docToObj(doc).items||[]):[];}).catch(function(){busy[d]=null;})
+  .then(function(){
+    if(busy[d]===null){delete busy[d];if(tok===busyTok&&d===date){$('#slotHint').textContent='No se pudieron cargar las horas. Revisa tu conexión y toca el día otra vez.';}return;}
+    if(tok===busyTok) renderSlots();
+  });
+}
+/* ---- mi solicitud ---- */
+function renderMine(r){
+  var box=$('#mine');
+  if(!r){box.hidden=true;return;}
+  box.hidden=false;
+  var d=r.data||{}, st=(d.status||'nueva');
+  var info='<span>'+esc(longDate(d.date||r.date))+' · '+esc(d.time||r.time)+'</span><span>'+esc(d.svc||r.svc)+'</span>';
+  box.className='card status '+(st==='confirmada'?'ok':st==='rechazada'?'no':'wait');
+  if(st==='confirmada') box.innerHTML='<div class="big">¡Cita confirmada!</div>'+info+'<span>Te esperamos.</span><button class="btn ghost" id="again">Hacer otra reserva</button>';
+  else if(st==='rechazada') box.innerHTML='<div class="big">No pudimos agendar esa hora</div>'+info+'<span>Elige otra hora o escríbenos por WhatsApp.</span><button class="btn ghost" id="again">Elegir otra hora</button>';
+  else box.innerHTML='<div class="big">Solicitud enviada</div>'+info+'<span>Esperando confirmación. Esta pantalla se actualiza sola.</span>';
+  $('#flow').hidden=st==='nueva';
+  var b=$('#again'); if(b) b.onclick=function(){mineSet(null);clearTimeout(poll);renderMine(null);$('#flow').hidden=false;busy={};loadBusy();window.scrollTo(0,0);};
+}
+function checkMine(){
+  var m=mineGet(); clearTimeout(poll);
+  if(!m){renderMine(null);return;}
+  api('/requests/'+m.id).then(function(doc){
+    if(!doc){mineSet(null);renderMine(null);$('#flow').hidden=false;return;}
+    var o=docToObj(doc); m.data=o; mineSet(m); renderMine(m);
+    if(o.status==='nueva'&&!document.hidden) poll=setTimeout(checkMine,15000);
+  }).catch(function(){renderMine(m);poll=setTimeout(checkMine,30000);});
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&mineGet())checkMine();});
+/* ---- envío ---- */
+function normPhone(p){
+  var d=String(p).replace(/\D/g,'');
+  if(d.length===8&&d.charAt(0)==='5') return '+53 '+d;
+  if(d.length===10&&d.indexOf('53')===0) return '+'+d.slice(0,2)+' '+d.slice(2);
+  return String(p).trim();
+}
+$('#form').addEventListener('submit',function(e){
+  e.preventDefault();
+  var err=$('#err'); err.hidden=true;
+  var t=totals(), name=$('#name').value.trim(), phone=normPhone($('#phone').value);
+  if(!t.n||!date||!time) return;
+  if(name.length<2){err.textContent='Escribe tu nombre.';err.hidden=false;return;}
+  if(phone.replace(/\D/g,'').length<8){err.textContent='Escribe un teléfono válido, para poder confirmarte la cita.';err.hidden=false;return;}
+  var btn=$('#send'); btn.disabled=true; btn.textContent='Enviando…';
+  var id=randId();
+  var data={name:name,phone:phone,svc:t.name,sids:sel.slice(),dur:t.dur,price:t.price,date:date,time:time,note:$('#note').value.trim(),status:'nueva',createdAt:Date.now()};
+  var fields={};Object.keys(data).forEach(function(k){fields[k]=toFS(data[k]);});
+  api('/requests?documentId='+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}).then(function(){
+    mineSet({id:id,data:data}); btn.textContent='Solicitar cita';
+    $('#form').reset(); sel=[];time='';renderSvcs();renderSlots();
+    checkMine(); window.scrollTo(0,0);
+  }).catch(function(){
+    err.textContent='No se pudo enviar la solicitud. Revisa tu conexión e inténtalo de nuevo.';err.hidden=false;btn.textContent='Solicitar cita';refreshForm();
+  });
+});
+$('#svcs').addEventListener('click',function(e){
+  var b=e.target.closest('[data-s]'); if(!b) return;
+  var i=sel.indexOf(b.dataset.s); if(i>-1) sel.splice(i,1); else sel.push(b.dataset.s);
+  renderSvcs(); loadBusy();
+});
+$('#days').addEventListener('click',function(e){
+  var b=e.target.closest('[data-d]'); if(!b||b.disabled) return;
+  date=b.dataset.d; time='';
+  document.querySelectorAll('.day').forEach(function(x){x.setAttribute('aria-pressed',String(x.dataset.d===date));});
+  loadBusy();
+});
+$('#slots').addEventListener('click',function(e){
+  var b=e.target.closest('[data-t]'); if(!b||b.disabled) return;
+  time=b.dataset.t;
+  document.querySelectorAll('.slot').forEach(function(x){x.setAttribute('aria-pressed',String(x.dataset.t===time));});
+  refreshForm();
+});
+/* ---- arranque ---- */
+function fatal(msg){$('#load').hidden=true;var f=$('#fatal');f.textContent=msg;f.hidden=false;}
+api('/public/catalog').then(function(doc){
+  if(!doc){fatal('Las reservas en línea todavía no están activas. Vuelve a intentarlo más tarde.');return;}
+  var o=docToObj(doc);
+  cat={name:o.name||'Reserva tu cita',cur:o.cur||'CUP',open:o.open||540,close:o.close||1200,step:o.step||30,wa:o.wa||'',days:Array.isArray(o.days)?o.days:[1,2,3,4,5,6],services:Array.isArray(o.services)?o.services:[]};
+  document.title=cat.name; $('#salon').textContent=cat.name;
+  $('#load').hidden=true; $('#flow').hidden=false;
+  if(cat.wa){var w=$('#wafoot');w.hidden=false;w.innerHTML='¿Prefieres escribirnos? <a class="wa" target="_blank" rel="noopener" href="https://wa.me/'+cat.wa.replace(/\D/g,'')+'">WhatsApp</a>';}
+  renderSvcs(); renderDays(); renderSlots(); checkMine();
+}).catch(function(){fatal('No se pudo cargar. Revisa tu conexión e inténtalo de nuevo.');});
+})();
+</script>
+</body></html>

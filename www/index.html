@@ -1,0 +1,1706 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Turnos</title>
+<style>
+:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/bricolage-grotesque-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/dm-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/dm-sans-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/dm-sans-latin-700-normal.woff2) format("woff2")}
+</style>
+<style>
+/* Layout: columna móvil de 480px con barra inferior fija; la pestaña activa sube como botón circular (como la referencia). */
+:root{
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+  --bg:#F6F3F8; --surface:#FFFFFF; --ink:#2A2035; --muted:#6C6179; --line:#E7DFEC;
+  --brand:#4B2E73; --on-brand:#FFFFFF; --brand-soft:#EBE2F6;
+  --pop:#D23B76; --on-pop:#FFFFFF; --pop-soft:#FCE4EE;
+  --hero:#4B2E73; --on-hero:#FFFFFF; --hero-line:rgba(255,255,255,.38);
+  --ok:#1B7048; --ok-bg:#DCF2E6;
+  --warn:#7F5200; --warn-bg:#FFEEC4;
+  --done:#46586A; --done-bg:#E2E9F0;
+  --bad:#A92E2B; --bad-bg:#FADEDD;
+  --shadow:0 1px 2px rgba(42,32,53,.06),0 8px 22px rgba(42,32,53,.07); --qr-bg:#FFFFFF;
+  --av-bg-l:88%; --av-fg-l:28%;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#150F1C; --surface:#211829; --ink:#F2ECF7; --muted:#A99DB6; --line:#34293F;
+    --brand:#C6ADF6; --on-brand:#1A1026; --brand-soft:#34254B;
+    --pop:#F0568F; --on-pop:#FFFFFF; --pop-soft:#47202F;
+    --hero:#2F2050; --on-hero:#F2ECF7; --hero-line:rgba(242,236,247,.32);
+    --ok:#74D6A4; --ok-bg:#17382A;
+    --warn:#F2C25C; --warn-bg:#40320F;
+    --done:#A9BAC9; --done-bg:#26323C;
+    --bad:#FF9D99; --bad-bg:#47201F;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+    --av-bg-l:30%; --av-fg-l:86%;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#150F1C; --surface:#211829; --ink:#F2ECF7; --muted:#A99DB6; --line:#34293F;
+  --brand:#C6ADF6; --on-brand:#1A1026; --brand-soft:#34254B;
+  --pop:#F0568F; --on-pop:#FFFFFF; --pop-soft:#47202F;
+  --hero:#2F2050; --on-hero:#F2ECF7; --hero-line:rgba(242,236,247,.32);
+  --ok:#74D6A4; --ok-bg:#17382A;
+  --warn:#F2C25C; --warn-bg:#40320F;
+  --done:#A9BAC9; --done-bg:#26323C;
+  --bad:#FF9D99; --bad-bg:#47201F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+  --av-bg-l:30%; --av-fg-l:86%;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--font-body); font-size:15px; line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+  -webkit-tap-highlight-color:transparent;
+}
+body.lock{overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--pop);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+
+.app{max-width:480px;margin:0 auto;padding-top:22px;padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.view{display:block}
+.stack{display:grid;gap:14px}
+
+/* Encabezados */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--pop)}
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.page-head h1{font:800 19px/1 var(--font-display);letter-spacing:.09em;color:var(--brand);text-transform:uppercase}
+.greet{font:800 19px/1.15 var(--font-display);letter-spacing:-.005em;text-wrap:balance}
+.qr-btn{flex:none;background:var(--brand-soft);color:var(--brand)}
+.sub{color:var(--muted);margin-top:4px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:22px 0 10px}
+.section-head h2{font:800 17px/1.1 var(--font-display)}
+.link{background:none;border:0;padding:6px 0;color:var(--brand);font-weight:700;font-size:13px}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:12px 18px;border:0;border-radius:10px;background:var(--brand);color:var(--on-brand);font-weight:700;font-size:13px;letter-spacing:.07em;text-transform:uppercase;text-decoration:none;white-space:nowrap}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-block{width:100%}
+.btn-ghost{background:transparent;color:var(--brand);border:1.5px solid var(--line)}
+.btn-danger{background:transparent;color:var(--bad);border:1.5px solid var(--bad-bg)}
+.btn-small{min-height:38px;padding:9px 14px;font-size:12px}
+.btn-light{background:var(--on-hero);color:var(--hero)}
+.btn-line-light{background:transparent;color:var(--on-hero);border:1.5px solid var(--hero-line)}
+.icon-btn{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:var(--bg);color:var(--ink)}
+
+/* Tarjeta destacada */
+.hero{position:relative;overflow:hidden;display:grid;gap:12px;padding:18px;border-radius:22px;background:var(--hero);color:var(--on-hero);isolation:isolate}
+.hero-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.hero-time{font:800 52px/1 var(--font-display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.hero-name{font:800 20px/1.15 var(--font-display)}
+.hero-sub{opacity:.85;margin-top:2px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+
+/* Estadísticas */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--surface);border-radius:16px;padding:12px;box-shadow:var(--shadow);min-width:0}
+.stat b{display:block;font:800 24px/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.stat span{display:block;margin-top:4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* Avatar */
+.avatar{flex:none;display:grid;place-items:center;width:54px;height:54px;border-radius:14px;font:800 17px/1 var(--font-display);background:hsl(var(--h) 55% var(--av-bg-l));color:hsl(var(--h) 45% var(--av-fg-l))}
+.avatar.sm{width:40px;height:40px;border-radius:12px;font-size:14px}
+
+/* Citas */
+.list{display:grid;gap:10px}
+.appt{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.appt.st-cancelada{opacity:.62}
+.appt.st-cancelada .appt-name{text-decoration:line-through}
+.appt-head{display:flex;align-items:center;gap:14px;width:100%;padding:12px 14px;border:0;background:none;text-align:left}
+.appt-main{display:grid;gap:2px;min-width:0;flex:1}
+.appt-name{font:800 17px/1.2 var(--font-display);color:var(--brand);overflow-wrap:anywhere}
+.appt-sub{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.appt-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:2px}
+.clock{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chev{flex:none;display:grid;place-items:center;color:var(--ink);transition:transform .2s}
+[aria-expanded="true"]>.chev{transform:rotate(180deg)}
+.pill{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:700}
+.pill-pendiente{background:var(--warn-bg);color:var(--warn)}
+.pill-confirmada{background:var(--ok-bg);color:var(--ok)}
+.pill-hecha{background:var(--done-bg);color:var(--done)}
+.pill-cancelada{background:var(--bad-bg);color:var(--bad)}
+.appt-body{padding:2px 14px 14px;display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px;margin:0 0 0}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.kv div{min-width:0}
+.kv dt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kv dd{margin:2px 0 0;overflow-wrap:anywhere}
+.kv .wide{grid-column:1/-1}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.note-ok{font-size:12.5px;color:var(--ok);display:inline-flex;align-items:center;gap:6px}
+
+.empty{background:var(--surface);border-radius:16px;padding:22px 18px;text-align:center;color:var(--muted);box-shadow:var(--shadow)}
+.empty b{display:block;color:var(--ink);font:800 17px/1.2 var(--font-display);margin-bottom:4px}
+
+/* Recordatorios */
+.rem{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
+.rem-main{flex:1;min-width:0}
+.rem-main b{display:block;font-weight:700;overflow-wrap:anywhere}
+.rem-main span{font-size:13px;color:var(--muted)}
+
+/* Calendario */
+.mtabs{display:flex;gap:20px;overflow-x:auto;white-space:nowrap;position:relative;scrollbar-width:none;padding:2px 0 12px}
+.mtabs::-webkit-scrollbar,.days::-webkit-scrollbar{display:none}
+.mtab{flex:none;background:none;border:0;padding:4px 0;font-size:14px;color:var(--muted)}
+.mtab.on{color:var(--ink);font-weight:700}
+.days{display:flex;gap:8px;overflow-x:auto;position:relative;scrollbar-width:none;padding:4px 2px 14px}
+.day{flex:none;display:grid;justify-items:center;gap:3px;width:52px;padding:10px 0 8px;border:1.5px solid transparent;border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+.dw{font-size:11px;letter-spacing:.04em;color:var(--muted)}
+.dn{font:800 20px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.dd{width:5px;height:5px;border-radius:50%;background:transparent}
+.dd.has{background:var(--brand)}
+.day.today .dw{color:var(--pop);font-weight:700}
+.day.on{background:var(--brand-soft);border-color:var(--brand)}
+.day-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 4px}
+.day-row h2{font:800 19px/1.1 var(--font-display)}
+.day-row h2 small{font:700 11px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--pop);margin-left:6px}
+.hour{display:flex;align-items:baseline;gap:6px;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.hh{font:800 17px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.ap{font-size:11px;color:var(--muted)}
+
+/* Clientas / servicios */
+.search{display:flex;gap:10px;margin-bottom:14px}
+.search input{flex:1;min-width:0}
+.row-card{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;background:none;text-align:left}
+.svc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px;border:0;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);text-align:left}
+.svc-row b{display:block;font-weight:700;overflow-wrap:anywhere}
+.svc-row span{font-size:13px;color:var(--muted)}
+.price{font:800 19px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--brand);flex:none}
+.history{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.history li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.history li span:last-child{color:var(--muted);flex:none}
+
+/* Formularios */
+input,select,textarea{width:100%;min-height:46px;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+.field{display:grid;gap:6px;border:0;padding:0;margin:0;min-width:0}
+.field>span,.field>legend{padding:0;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.form{display:grid;gap:16px}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);text-align:left}
+.pick small{color:var(--muted);font-size:12.5px;flex:none}
+.pick[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+.picks{display:grid;gap:8px}
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.slot{min-height:42px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+.slot[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.slot:disabled{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.hint{font-size:13px;color:var(--muted)}
+
+/* Hoja inferior */
+.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(20,10,30,.55)}
+.sheet-panel{position:relative;width:100%;max-width:480px;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:10px max(20px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));display:grid;gap:16px;align-content:start;animation:rise .22s ease-out}
+.sheet-grip{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-head h2{font:800 21px/1.1 var(--font-display)}
+@keyframes rise{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+
+/* QR de pago */
+.qr-card{display:flex;align-items:center;gap:14px;width:100%;padding:12px 14px;border:0;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);text-align:left}
+.qr-thumb{flex:none;width:64px;height:64px;border-radius:10px;background:var(--qr-bg);object-fit:contain;border:1px solid var(--line)}
+.qr-empty{flex:none;display:grid;place-items:center;width:64px;height:64px;border-radius:10px;border:1.5px dashed var(--line);color:var(--brand)}
+.qr-text{display:grid;gap:2px;min-width:0}
+.qr-text b{font:800 16px/1.2 var(--font-display)}
+.qr-text span{font-size:13px;color:var(--muted)}
+.qr-big{display:block;width:100%;max-height:60vh;object-fit:contain;background:var(--qr-bg);border-radius:16px;padding:12px;border:1px solid var(--line)}
+
+/* Datos */
+textarea{font:inherit;font-size:13px;resize:vertical;min-height:96px}
+.data-row{display:flex;align-items:center;gap:12px;margin-top:28px;padding:12px 14px;border:1px solid var(--line);border-radius:16px}
+.data-text{display:grid;gap:2px;min-width:0;flex:1}
+.data-text b{font:800 15px/1.2 var(--font-display)}
+.data-text span{font-size:13px;color:var(--muted)}
+.data-btn{position:relative;flex:none;background:var(--brand-soft);color:var(--brand)}
+.data-btn .badge{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--pop);border:2px solid var(--surface)}
+
+/* Licencia y recurrencia */
+.app,.nav{opacity:var(--fade,1)}
+body.blank .app,body.blank .nav{pointer-events:none}
+body.fading{-webkit-user-select:none;user-select:none}
+.notice{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;padding:12px 14px;border-radius:14px;background:var(--warn-bg);color:var(--warn);font-size:13.5px}
+.notice.bad{background:var(--bad-bg);color:var(--bad)}
+.notice button{flex:none;border:0;background:none;font-weight:700;text-decoration:underline;color:inherit;padding:4px 0}
+.code-box{font:600 17px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;padding:12px 14px;border-radius:12px;background:var(--bg);border:1.5px solid var(--line);word-break:break-all;user-select:all}
+.sec-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.simbar{position:fixed;z-index:70;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:5px 10px;background:#222;color:#fff;font-size:12px}
+.simbar input{width:70px;min-height:0;padding:3px 6px;border-radius:6px;border:0}
+.rec-note{font-size:12.5px;color:var(--pop);font-weight:600}
+/* v4 */
+.req{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.req b{font-size:15px}
+.req .meta{font-size:13px;color:var(--muted)}
+.req.conf{border-color:var(--bad)}
+.daychips{display:flex;flex-wrap:wrap;gap:6px}
+.daychips .chip{min-width:44px;min-height:38px;padding:6px 10px;border:1.5px solid var(--line);border-radius:99px;background:var(--card);font-weight:700;color:var(--muted)}
+.daychips .chip[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+/* v3 */
+.actions.one{flex-wrap:nowrap;align-items:center}
+.actions.one .btn{padding-left:13px;padding-right:13px;flex:none}
+.actions.one .icon-btn{flex:none;width:40px}
+.picks.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pick.big{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:68px}
+.pick.big span{font-weight:700;font-size:16px}
+.pick.big small{font-size:12px}
+.field>span small,.field>legend small{font-size:10.5px;font-weight:500;letter-spacing:0;text-transform:none;opacity:.85}
+.shift{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13px}
+.shift b{font-variant-numeric:tabular-nums}
+/* Acciones de clienta */
+.actions .push{margin-left:auto}
+.row-ico{background:var(--brand-soft);color:var(--brand)}
+.row-ico.del{background:var(--bad-bg);color:var(--bad)}
+
+/* Historial */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--brand-soft);margin-bottom:14px}
+.seg button{min-height:40px;border:0;border-radius:9px;background:transparent;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.mnav h2{font:800 19px/1.1 var(--font-display)}
+.mnav .icon-btn{background:var(--brand-soft);color:var(--brand)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.chip{min-height:36px;padding:6px 14px;border:1.5px solid var(--line);border-radius:99px;background:var(--surface);font-size:13px;font-weight:700;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+
+/* Aviso */
+.toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));max-width:min(440px,calc(100% - 32px));padding:11px 16px;border-radius:12px;background:var(--ink);color:var(--bg);font-size:14px;font-weight:500;box-shadow:var(--shadow)}
+
+/* Barra inferior */
+.nav{position:fixed;z-index:30;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:0 max(16px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(16px,env(safe-area-inset-left,0px))}
+.nav-inner{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:62px;padding:0;border:0;background:none;color:var(--muted);font-size:11.5px;font-weight:500}
+.nav-ico{display:grid;place-items:center;width:30px;height:30px}
+.nav-item[aria-current="page"]{color:var(--pop);font-weight:700}
+.nav-item[aria-current="page"] svg{stroke-width:2.4}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body><main class="app">
+  <section id="v-inicio" class="view" aria-label="Inicio"><div id="home"></div></section>
+
+  <section id="v-calendario" class="view" aria-label="Calendario" hidden><div id="cal"></div></section>
+
+  <section id="v-clientas" class="view" aria-label="Clientas" hidden>
+    <header class="page-head"><h1>Clientas</h1></header>
+    <div class="search">
+      <input id="q" type="search" placeholder="Buscar por nombre o teléfono" aria-label="Buscar clienta" autocomplete="off">
+      <button class="btn" data-action="new-client" aria-label="Nueva clienta" id="btn-new-client"></button>
+    </div>
+    <div id="client-list" class="list"></div>
+  </section>
+
+  <section id="v-servicios" class="view" aria-label="Servicios" hidden>
+    <header class="page-head"><h1>Servicios</h1><button class="btn btn-small" data-action="new-svc" id="btn-new-svc">Nuevo</button></header>
+    <p class="sub" style="margin:-6px 0 14px">La duración define cuántos horarios quedan libres al agendar.</p>
+    <div id="online-card"></div>
+    <div id="svc-list" class="list"></div>
+    <div id="data-row"></div>
+  </section>
+</main>
+
+<nav class="nav" aria-label="Navegación principal"><div class="nav-inner" id="nav"></div></nav>
+<div class="sheet" id="sheet" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<input type="file" id="qr-file" accept="image/*" hidden>
+<input type="file" id="imp-file" accept=".json,application/json,text/plain" hidden>
+
+<script>
+(function(){
+'use strict';
+var KEY='lacado-agenda-v1';
+var DAYS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+var DAYS3=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var OPEN=9*60, CLOSE=20*60;
+var STATUS={pendiente:'Programada',confirmada:'Programada',hecha:'Completada',cancelada:'Cancelada'};
+var VIEWS=['inicio','calendario','clientas','servicios'];
+
+function svg(p,s){s=s||20;return '<svg viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
+var ICON={
+  home:svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/>',24),
+  cal:svg('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h2M14 14h2M8 17h2"/>',24),
+  users:svg('<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.5-3.6 3-5.5 6.5-5.5s6 1.9 6.5 5.5"/><circle cx="17.5" cy="9.5" r="2.5"/><path d="M17.5 14.5c2.4 0 4 1.4 4.3 4.5"/>',24),
+  polish:svg('<rect x="7" y="11" width="10" height="10" rx="2.5"/><rect x="9.5" y="3" width="5" height="8" rx="1.2"/><path d="M10 15.5h4"/>',24),
+  chev:svg('<path d="m6 9 6 6 6-6"/>',18),
+  clock:svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',14),
+  plus:svg('<path d="M12 5v14M5 12h14"/>',20),
+  x:svg('<path d="M6 6l12 12M18 6 6 18"/>',18),
+  chat:svg('<path d="M4 5.5h16v10.5H9.5L5 20v-4H4z"/>',16),
+  check:svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>',15),
+  qr:svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20.5 14v.01M14 20.5h.01M17 20.5h3.5v-3"/>',28)
+};
+
+/* ---------- utilidades ---------- */
+function $(s,r){return (r||document).querySelector(s);}
+function pad(n){return String(n).padStart(2,'0');}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function parse(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function today(){return iso(new Date());}
+function addDays(s,n){var d=parse(s);d.setDate(d.getDate()+n);return iso(d);}
+function toMin(t){var p=t.split(':').map(Number);return p[0]*60+p[1];}
+function toTime(m){return pad(Math.floor(m/60))+':'+pad(m%60);}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function money(n){return '$'+(Math.round(n*100)/100);}
+function uid(){return Math.random().toString(36).slice(2,9);}
+function h12(h){return (h%12||12)+':00';}
+function sum(arr){return arr.reduce(function(s,a){return s+a.price;},0);}
+function paidOf(a){return a.paid!=null?a.paid:a.price;}
+function sumPaid(arr){return arr.reduce(function(s,a){return s+paidOf(a);},0);}
+
+/* ---------- datos ---------- */
+function seed(){
+  var t=today();
+  var services=[
+    {id:'s1',name:'Semipermanente manos',dur:45,price:25},
+    {id:'s2',name:'Esmaltado tradicional',dur:30,price:15},
+    {id:'s3',name:'Acrílicas set completo',dur:120,price:55},
+    {id:'s4',name:'Relleno acrílico',dur:75,price:35},
+    {id:'s5',name:'Pedicura spa',dur:60,price:35},
+    {id:'s6',name:'Nail art (por mano)',dur:30,price:12},
+    {id:'s7',name:'Retiro de gel',dur:20,price:10}
+  ];
+  var clients=[
+    {id:'c1',name:'Camila Rojas',phone:'+1 555 010 0101'},
+    {id:'c2',name:'Daniela Pérez',phone:'+1 555 010 0102'},
+    {id:'c3',name:'Lucía Herrera',phone:'+1 555 010 0103'},
+    {id:'c4',name:'Valentina Cruz',phone:'+1 555 010 0104'},
+    {id:'c5',name:'Sofía Márquez',phone:'+1 555 010 0105'},
+    {id:'c6',name:'Ariana Gómez',phone:'+1 555 010 0106'},
+    {id:'c7',name:'Paula Medina',phone:'+1 555 010 0107'},
+    {id:'c8',name:'Mariana Ortiz',phone:'+1 555 010 0108'}
+  ];
+  var appts=[];
+  function mk(cid,sid,off,time,status,note){
+    var s=services.filter(function(x){return x.id===sid;})[0];
+    appts.push({id:uid(),cid:cid,svc:s.name,dur:s.dur,price:s.price,date:addDays(t,off),time:time,status:status,note:note||'',reminded:false});
+  }
+  mk('c1','s1',0,'09:30','confirmada','Diseño francés, color rosa palo');
+  mk('c2','s3',0,'11:00','confirmada','Forma almendra, largo medio');
+  mk('c3','s5',0,'13:30','pendiente');
+  mk('c4','s2',0,'15:00','confirmada');
+  mk('c5','s4',0,'16:30','pendiente','Trae foto de referencia');
+  mk('c6','s2',1,'10:00','pendiente');
+  mk('c7','s1',1,'12:00','pendiente');
+  mk('c8','s3',1,'16:00','confirmada');
+  mk('c1','s7',2,'09:00','confirmada');
+  mk('c3','s6',2,'11:30','pendiente');
+  mk('c2','s1',4,'10:00','confirmada');
+  mk('c4','s5',4,'14:00','pendiente');
+  mk('c5','s1',-1,'10:00','hecha');
+  mk('c6','s5',-1,'12:00','hecha');
+  mk('c7','s4',-3,'15:00','hecha');
+  mk('c8','s2',-3,'17:00','cancelada','Avisó que no podía venir');
+  return {services:services,clients:clients,appts:appts};
+}
+var SCHEMA=3;
+function cleanRec(r){
+  if(!r||(r.unit!=='dias'&&r.unit!=='semanas')) return null;
+  var n=Math.round(+r.n); if(!(n>=1)) n=1; n=Math.min(n,r.unit==='dias'?365:52);
+  var wd=Math.round(+r.wd); if(!(wd>=0&&wd<=6)) wd=1;
+  return {unit:r.unit,n:n,wd:wd};
+}
+function migrate(d){
+  /* Adapta datos guardados por versiones anteriores sin perder nada */
+  d.services=(d.services||[]).filter(Boolean); d.clients=(d.clients||[]).filter(Boolean); d.appts=(d.appts||[]).filter(Boolean);
+  d.services.forEach(function(x){x.dur=+x.dur||30;x.price=+x.price||0;});
+  d.clients.forEach(function(x){x.phone=x.phone||'';x.rec=cleanRec(x.rec);if(!x.rec)delete x.rec;});
+  d.appts.forEach(function(a){
+    a.dur=+a.dur||30; a.price=+a.price||0; a.note=a.note||''; a.reminded=!!a.reminded;
+    if(!Object.prototype.hasOwnProperty.call(STATUS,a.status)) a.status='pendiente';
+  });
+  d.schema=SCHEMA;
+  return d;
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){var d=JSON.parse(raw); if(d&&d.services&&d.clients&&d.appts) return migrate(d);}
+  }catch(e){}
+  return null;
+}
+function fresh(){var d=seed();d.clients=[];d.appts=[];return d;}
+var db=load()||fresh();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){} if(typeof schedulePublish==='function') schedulePublish();}
+var QRKEY='gissy-qr-v1', qrImg='';
+var BUILD='__BUILD__';
+try{qrImg=localStorage.getItem(QRKEY)||'';}catch(e){}
+var BKKEY='gissy-last-backup-v1', FUKEY='gissy-first-use-v1', lastBackup=0, firstUse=Date.now(), pendingImport=null;
+try{
+  lastBackup=+localStorage.getItem(BKKEY)||0;
+  var fu=+localStorage.getItem(FUKEY);
+  if(fu) firstUse=fu; else localStorage.setItem(FUKEY,String(firstUse));
+}catch(e){}
+
+function client(id){return db.clients.filter(function(c){return c.id===id;})[0];}
+function service(id){return db.services.filter(function(s){return s.id===id;})[0];}
+function appt(id){return db.appts.filter(function(a){return a.id===id;})[0];}
+function dayAppts(date){return db.appts.filter(function(a){return a.date===date;}).sort(function(x,y){return x.time.localeCompare(y.time);});}
+function isLive(a){return a.status==='pendiente'||a.status==='confirmada';}
+
+/* ---------- estado de interfaz ---------- */
+var view='inicio';
+var selDate=today();
+var calTab='agenda', histMonth=today().slice(0,7), histFilter='hecha';
+var open={};
+var form=null;
+
+/* ---------- componentes ---------- */
+function avatar(name,cls){
+  var w=String(name||'?').trim().split(/\s+/);
+  var ini=((w[0]||'?').charAt(0)+(w[1]?w[1].charAt(0):'')).toUpperCase();
+  var h=0; for(var i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))%360;}
+  return '<span class="avatar'+(cls?' '+cls:'')+'" style="--h:'+h+'">'+esc(ini)+'</span>';
+}
+function waUrl(a,c){
+  var phone=(c.phone||'').replace(/\D/g,'');
+  if(!phone) return '';
+  var t=today(), d=parse(a.date);
+  var when=a.date===t?'hoy':a.date===addDays(t,1)?'mañana':'el '+DAYS[d.getDay()]+' '+d.getDate();
+  var first=c.name.split(' ')[0];
+  var msg='Hola '+first+', te recordamos tu cita de '+a.svc+' '+when+' a las '+a.time+'. ¡Te esperamos! Si no puedes venir, avísanos.';
+  return 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+}
+function waLink(a,c,cls,label){
+  var u=waUrl(a,c);
+  if(!u) return '';
+  return '<a class="btn '+cls+'" href="'+esc(u)+'" target="_blank" rel="noopener" data-action="remind" data-id="'+a.id+'">'+ICON.chat+label+'</a>';
+}
+function apptCard(a){
+  var c=client(a.cid)||{name:'Clienta',phone:''};
+  var isOpen=!!open[a.id];
+  var acts='';
+  if(isLive(a)){
+    acts+='<button class="btn btn-small" data-action="complete" data-id="'+a.id+'">Listo</button>';
+    acts+=waLink(a,c,'btn-ghost btn-small','Recordar');
+    acts+='<button class="icon-btn row-ico push" data-action="edit-appt" data-id="'+a.id+'" aria-label="Editar servicios de la cita">'+ICON.edit+'</button>';
+    acts+='<button class="icon-btn row-ico del" data-action="status" data-id="'+a.id+'" data-status="cancelada" aria-label="Cancelar cita">'+ICON.x+'</button>';
+  } else {
+    acts+='<button class="btn btn-ghost btn-small" data-action="status" data-id="'+a.id+'" data-status="pendiente">Reabrir</button>';
+  }
+  return '<article class="appt st-'+a.status+'" data-card="'+a.id+'">'+
+    '<button class="appt-head" data-action="toggle" data-id="'+a.id+'" aria-expanded="'+isOpen+'">'+
+      avatar(c.name)+
+      '<span class="appt-main">'+
+        '<span class="appt-name">'+esc(c.name)+'</span>'+
+        '<span class="appt-sub">'+esc(a.svc)+' · '+a.dur+' min</span>'+
+        '<span class="appt-tags"><span class="pill pill-'+a.status+'">'+STATUS[a.status]+'</span><span class="clock">'+ICON.clock+a.time+'</span></span>'+
+      '</span>'+
+      '<span class="chev">'+ICON.chev+'</span>'+
+    '</button>'+
+    '<div class="appt-body"'+(isOpen?'':' hidden')+'>'+
+      '<dl class="kv">'+
+        '<div><dt>Horario</dt><dd>'+a.time+' – '+toTime(toMin(a.time)+a.dur)+'</dd></div>'+
+        '<div><dt>'+(a.status==='hecha'?'Cobrado':'Precio')+'</dt><dd>'+money(a.status==='hecha'?paidOf(a):a.price)+'</dd></div>'+
+        '<div class="wide"><dt>Teléfono</dt><dd>'+esc(c.phone||'Sin teléfono')+'</dd></div>'+
+        (a.note?'<div class="wide"><dt>Nota</dt><dd>'+esc(a.note)+'</dd></div>':'')+
+      '</dl>'+
+      (a.reminded&&isLive(a)?'<span class="note-ok">'+ICON.check+'Recordatorio enviado</span>':'')+
+      '<div class="actions'+(isLive(a)?' one':'')+'">'+acts+'</div>'+
+    '</div>'+
+  '</article>';
+}
+
+/* ---------- Inicio ---------- */
+function renderHome(){
+  var t=today(), now=new Date(), nowM=now.getHours()*60+now.getMinutes();
+  var list=dayAppts(t);
+  var live=list.filter(isLive), done=list.filter(function(a){return a.status==='hecha';});
+  var total=live.length+done.length;
+  var nxt=live.filter(function(a){return toMin(a.time)+a.dur>=nowM;})[0];
+  var hero;
+  if(nxt){
+    var c=client(nxt.cid)||{name:'Clienta',phone:''};
+    var diff=toMin(nxt.time)-nowM;
+    var when=diff<=0?'En curso':'En '+(diff<60?diff+' min':Math.floor(diff/60)+' h'+(diff%60?' '+(diff%60)+' min':''));
+    hero='<div class="hero">'+
+      '<span class="hero-label">Siguiente cita · '+when+'</span>'+
+      '<div class="hero-time">'+nxt.time+'</div>'+
+      '<div><div class="hero-name">'+esc(c.name)+'</div><div class="hero-sub">'+esc(nxt.svc)+' · '+nxt.dur+' min</div></div>'+
+      '<div class="hero-actions">'+
+        '<button class="btn btn-light btn-small" data-action="complete" data-id="'+nxt.id+'">Listo</button>'+
+        waLink(nxt,c,'btn-line-light btn-small','WhatsApp')+
+      '</div></div>';
+  } else {
+    hero='<div class="hero">'+
+      '<span class="hero-label">Siguiente cita</span>'+
+      '<div class="hero-name">'+(total?'No quedan citas por atender hoy':'Hoy no hay citas')+'</div>'+
+      '<div class="hero-sub">Es buen momento para llenar la agenda.</div>'+
+      '<div class="hero-actions"><button class="btn btn-light btn-small" data-action="new-appt">Agendar cita</button></div></div>';
+  }
+  var tm=addDays(t,1);
+  var rem=dayAppts(tm).filter(isLive);
+  var remHTML='';
+  if(rem.length){
+    remHTML='<div class="section-head"><h2>Recordar para mañana</h2><span class="sub" style="margin:0">'+rem.length+(rem.length===1?' cita':' citas')+'</span></div><div class="list">'+
+      rem.map(function(a){
+        var c=client(a.cid)||{name:'Clienta',phone:''};
+        var btn=a.reminded
+          ? '<span class="note-ok">'+ICON.check+'Avisada</span>'
+          : (waLink(a,c,'btn-ghost btn-small','Avisar')||'<span class="hint">Sin teléfono</span>');
+        return '<div class="rem">'+avatar(c.name,'sm')+'<div class="rem-main"><b>'+esc(c.name)+'</b><span>'+a.time+' · '+esc(a.svc)+'</span></div>'+btn+'</div>';
+      }).join('')+'</div>';
+  }
+  var d=new Date();
+  $('#home').innerHTML=
+    '<header class="page-head"><h1 class="greet">'+cap(DAYS[d.getDay()])+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+'</h1>'+
+    '<button class="icon-btn qr-btn" data-action="'+(qrImg?'show-qr':'pick-qr')+'" aria-label="'+(qrImg?'Mostrar QR de pago':'Cargar QR de pago')+'">'+ICON.qr+'</button></header>'+
+    licBanner()+reqBanner()+'<div class="stack">'+hero+
+      '<div class="stats">'+
+        '<div class="stat"><b>'+done.length+'/'+total+'</b><span>Citas hoy</span></div>'+
+        '<div class="stat"><b>'+money(sumPaid(done))+'</b><span>Cobrado</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="section-head"><h2>Citas de hoy</h2><button class="link" data-action="goto-today">Ver calendario</button></div>'+
+    (list.length?'<div class="list">'+list.map(apptCard).join('')+'</div>':'<div class="empty"><b>Agenda libre</b>No hay citas para hoy.</div>')+
+    remHTML;
+}
+
+/* ---------- Calendario ---------- */
+function agendaHTML(){
+  var t=today(), sd=parse(selDate), y=sd.getFullYear(), m=sd.getMonth();
+  var dim=new Date(y,m+1,0).getDate(), now=new Date(), tabs='', days='', i;
+  var off=(y-now.getFullYear())*12+m-now.getMonth();
+  for(i=Math.min(-1,off);i<=Math.max(6,off);i++){
+    var dt=new Date(now.getFullYear(),now.getMonth()+i,1);
+    var on=dt.getFullYear()===y&&dt.getMonth()===m;
+    tabs+='<button class="mtab'+(on?' on':'')+'" data-action="pick-month" data-ym="'+dt.getFullYear()+'-'+dt.getMonth()+'"'+(on?' aria-current="true"':'')+'>'+cap(MONTHS[dt.getMonth()])+' '+dt.getFullYear()+'</button>';
+  }
+  for(var n=1;n<=dim;n++){
+    var ds=y+'-'+pad(m+1)+'-'+pad(n);
+    var wd=new Date(y,m,n).getDay();
+    var has=db.appts.some(function(a){return a.date===ds&&isLive(a);});
+    days+='<button class="day'+(ds===selDate?' on':'')+(ds===t?' today':'')+'" data-action="pick-day" data-date="'+ds+'" aria-pressed="'+(ds===selDate)+'"><span class="dw">'+DAYS3[wd]+'</span><span class="dn">'+n+'</span><span class="dd'+(has?' has':'')+'"></span></button>';
+  }
+  var all=dayAppts(selDate), list=all.filter(isLive), hidden=all.length-list.length, groups={};
+  list.forEach(function(a){var h=Math.floor(toMin(a.time)/60);(groups[h]=groups[h]||[]).push(a);});
+  var body=Object.keys(groups).map(Number).sort(function(a,b){return a-b;}).map(function(h){
+    return '<div class="hour"><span class="hh">'+h12(h)+'</span><span class="ap">'+(h<12?'AM':'PM')+'</span></div><div class="list">'+groups[h].map(apptCard).join('')+'</div>';
+  }).join('');
+  if(!list.length) body='<div class="empty" style="margin-top:18px"><b>Sin citas pendientes</b>No hay citas agendadas este día. Toca «Agendar cita» para añadir una.</div>';
+  var note=hidden?'<button class="link" data-action="go-hist" data-date="'+selDate+'">'+hidden+(hidden===1?' cita realizada o cancelada':' citas realizadas o canceladas')+' · Ver en Historial</button>':'';
+  return '<div class="mtabs" id="mtabs">'+tabs+'</div>'+
+    '<div class="days" id="days">'+days+'</div><p class="hint" style="margin:-8px 0 8px;text-align:center">Desliza a los lados para cambiar de día</p>'+
+    '<div class="day-row"><h2>'+cap(DAYS[sd.getDay()])+' '+sd.getDate()+(selDate===t?'<small>Hoy</small>':'')+'</h2><button class="btn" data-action="new-appt">Agendar cita</button></div>'+
+    note+body;
+}
+function histDay(ds){var d=parse(ds);return '<div class="hour"><span class="hh">'+cap(DAYS[d.getDay()])+' '+d.getDate()+'</span><span class="ap">'+cap(MONTHS[d.getMonth()]).slice(0,3)+'</span></div>';}
+function histHTML(){
+  var ym=histMonth, y=+ym.slice(0,4), m=+ym.slice(5,7)-1, t=today();
+  var desc=function(a,b){return (b.date+b.time).localeCompare(a.date+a.time);};
+  var inMonth=db.appts.filter(function(a){return a.date.slice(0,7)===ym&&!isLive(a);});
+  var done=inMonth.filter(function(a){return a.status==='hecha';});
+  var canc=inMonth.filter(function(a){return a.status==='cancelada';});
+  var shown=(histFilter==='hecha'?done:histFilter==='cancelada'?canc:inMonth).slice().sort(desc);
+  var stale=db.appts.filter(function(a){return isLive(a)&&a.date<t;}).sort(desc);
+  var out='<div class="mnav"><button class="icon-btn" data-action="hist-prev" aria-label="Mes anterior">'+ICON.chevL+'</button><h2>'+cap(MONTHS[m])+' '+y+'</h2><button class="icon-btn" data-action="hist-next" aria-label="Mes siguiente">'+ICON.chevR+'</button></div>'+
+    '<div class="stats"><div class="stat"><b>'+done.length+'</b><span>Realizadas</span></div><div class="stat"><b>'+money(sumPaid(done))+'</b><span>Cobrado</span></div></div>'+
+    '<div class="chips" role="group" aria-label="Filtrar historial">'+
+      [['hecha','Realizadas ('+done.length+')'],['cancelada','Canceladas ('+canc.length+')'],['todas','Todas ('+inMonth.length+')']].map(function(c){return '<button class="chip" data-action="hist-filter" data-f="'+c[0]+'" aria-pressed="'+(histFilter===c[0])+'">'+c[1]+'</button>';}).join('')+
+    '</div>';
+  if(shown.length){
+    var last='';
+    shown.forEach(function(a){
+      if(a.date!==last){ if(last) out+='</div>'; out+=histDay(a.date)+'<div class="list">'; last=a.date; }
+      out+=apptCard(a);
+    });
+    out+='</div>';
+  } else {
+    out+='<div class="empty" style="margin-top:14px"><b>Sin registros</b>No hay citas '+(histFilter==='hecha'?'realizadas':histFilter==='cancelada'?'canceladas':'')+' en '+MONTHS[m]+' de '+y+'.</div>';
+  }
+  if(stale.length){
+    out+='<div class="section-head"><h2>Sin cerrar</h2><span class="sub" style="margin:0">'+stale.length+(stale.length===1?' cita pasada':' citas pasadas')+'</span></div><p class="hint" style="margin:-4px 0 10px">Ya pasó su fecha y siguen pendientes. Complétalas o cancélalas para que cuenten en el historial.</p><div class="list">'+stale.map(apptCard).join('')+'</div>';
+  }
+  return out;
+}
+function renderCal(){
+  var seg='<div class="seg" role="group" aria-label="Vista del calendario"><button data-action="cal-tab" data-tab="agenda" aria-pressed="'+(calTab==='agenda')+'">Agenda</button><button data-action="cal-tab" data-tab="historial" aria-pressed="'+(calTab==='historial')+'">Historial</button></div>';
+  $('#cal').innerHTML='<header class="page-head"><h1>Calendario</h1></header>'+seg+(calTab==='historial'?histHTML():agendaHTML());
+  if(calTab==='agenda') centerCal();
+}
+function centerCal(){
+  [['#mtabs','.mtab.on'],['#days','.day.on']].forEach(function(p){
+    var box=$(p[0]), b=box&&$(p[1],box);
+    if(box&&b&&box.clientWidth) box.scrollLeft=b.offsetLeft-(box.clientWidth-b.offsetWidth)/2;
+  });
+}
+
+/* ---------- Clientas ---------- */
+function renderClients(){
+  var q=($('#q').value||'').trim().toLowerCase(), t=today();
+  var list=db.clients.filter(function(c){return !q||c.name.toLowerCase().indexOf(q)>-1||(c.phone||'').replace(/\D/g,'').indexOf(q.replace(/\D/g,'')||'§')>-1;})
+    .sort(function(a,b){return a.name.localeCompare(b.name,'es');});
+  if(!list.length){$('#client-list').innerHTML='<div class="empty"><b>Sin resultados</b>Prueba con otro nombre o añade una clienta nueva.</div>';return;}
+  $('#client-list').innerHTML=list.map(function(c){
+    var mine=db.appts.filter(function(a){return a.cid===c.id;}).sort(function(x,y){return (y.date+y.time).localeCompare(x.date+x.time);});
+    var visits=mine.filter(function(a){return a.status==='hecha';}).length;
+    var next=mine.filter(function(a){return isLive(a)&&a.date>=t;}).sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time);})[0];
+    var nextTxt='';
+    if(next){var d=parse(next.date);nextTxt=' · Próxima: '+(next.date===t?'hoy':next.date===addDays(t,1)?'mañana':DAYS3[d.getDay()].toLowerCase()+' '+d.getDate())+' '+next.time;}
+    var isOpen=!!open[c.id];
+    var hist=mine.slice(0,4).map(function(a){var d=parse(a.date);return '<li><span>'+esc(a.svc)+'</span><span>'+d.getDate()+' '+MONTHS[d.getMonth()].slice(0,3)+' · '+STATUS[a.status].toLowerCase()+'</span></li>';}).join('');
+    var ph=(c.phone||'').replace(/\D/g,'');
+    return '<article class="appt">'+
+      '<button class="appt-head" data-action="toggle" data-id="'+c.id+'" aria-expanded="'+isOpen+'">'+avatar(c.name)+
+        '<span class="appt-main"><span class="appt-name">'+esc(c.name)+'</span>'+
+        '<span class="appt-sub">'+visits+(visits===1?' visita':' visitas')+esc(nextTxt)+'</span>'+
+        '<span class="appt-sub">'+esc(c.phone||'Sin teléfono')+'</span>'+(c.rec?'<span class="rec-note">↻ '+esc(recText(c.rec))+'</span>':'')+'</span>'+
+        '<span class="chev">'+ICON.chev+'</span></button>'+
+      '<div class="appt-body"'+(isOpen?'':' hidden')+'>'+
+        (hist?'<div><div class="hint" style="margin-bottom:6px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px">Historial</div><ul class="history">'+hist+'</ul></div>':'<p class="hint">Aún no tiene citas.</p>')+
+        '<div class="actions"><button class="btn btn-small" data-action="appt-for" data-id="'+c.id+'">Agendar cita</button>'+
+        (ph?'<a class="btn btn-ghost btn-small" href="https://wa.me/'+ph+'" target="_blank" rel="noopener">'+ICON.chat+'WhatsApp</a>':'')+
+        '<button class="icon-btn row-ico push" data-action="edit-client" data-id="'+c.id+'" aria-label="Editar clienta">'+ICON.edit+'</button>'+
+        '<button class="icon-btn row-ico del" data-action="del-client" data-id="'+c.id+'" aria-label="Eliminar clienta">'+ICON.trash+'</button></div>'+
+      '</div></article>';
+  }).join('');
+}
+
+/* ---------- Servicios ---------- */
+function renderServices(){
+  renderOnlineCard();
+  $('#svc-list').innerHTML=db.services.map(function(s){
+    return '<button class="svc-row" data-action="edit-svc" data-id="'+s.id+'"><span><b>'+esc(s.name)+'</b><span>'+s.dur+' min</span></span><span class="price">'+money(s.price)+'</span></button>';
+  }).join('')||'<div class="empty"><b>Sin servicios</b>Añade el primero con el botón «Nuevo».</div>';
+}
+
+function renderAll(){renderHome();renderCal();renderClients();renderServices();renderData();}
+
+/* ---------- navegación ---------- */
+var NAV=[['inicio','Inicio','home'],['calendario','Calendario','cal'],['clientas','Clientas','users'],['servicios','Servicios','polish']];
+function renderNav(){
+  $('#nav').innerHTML=NAV.map(function(n){
+    return '<button class="nav-item" data-action="nav" data-view="'+n[0]+'"'+(view===n[0]?' aria-current="page"':'')+'><span class="nav-ico">'+ICON[n[2]]+'</span><span>'+n[1]+'</span></button>';
+  }).join('');
+}
+function show(v,fromHash){
+  if(VIEWS.indexOf(v)<0) v='inicio';
+  view=v;
+  VIEWS.forEach(function(n){$('#v-'+n).hidden=n!==v;});
+  renderNav();
+  if(!fromHash && location.hash.slice(1)!==v){try{history.replaceState(null,'','#'+v);}catch(e){location.hash=v;}}
+  window.scrollTo(0,0);
+  if(v==='calendario') centerCal();
+}
+
+/* ---------- aviso ---------- */
+var toastTimer;
+function toast(msg){
+  var el=$('#toast'); el.textContent=msg; el.hidden=false;
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){el.hidden=true;},2600);
+}
+
+/* ---------- hoja inferior ---------- */
+function openSheet(title,html){
+  var s=$('#sheet');
+  s.innerHTML='<div class="sheet-backdrop" data-action="close-sheet"></div>'+
+    '<div class="sheet-panel" role="dialog" aria-modal="true" aria-label="'+esc(title)+'" tabindex="-1">'+
+    '<div class="sheet-grip"></div>'+
+    '<div class="sheet-head"><h2>'+esc(title)+'</h2><button class="icon-btn" data-action="close-sheet" aria-label="Cerrar">'+ICON.x+'</button></div>'+html+'</div>';
+  s.hidden=false; document.body.classList.add('lock');
+  var p=$('.sheet-panel',s); if(p) p.focus({preventScroll:true});
+}
+function closeSheet(){
+  var s=$('#sheet'); s.hidden=true; s.innerHTML=''; document.body.classList.remove('lock'); form=null;
+}
+
+/* ---------- formulario de cita ---------- */
+function openApptForm(date,cid){
+  form={cid:cid||'',newName:'',newPhone:'',sids:[],date:date||today(),time:'',note:''};
+  var clientOpts='<option value="">Elige una clienta</option>'+
+    db.clients.slice().sort(function(a,b){return a.name.localeCompare(b.name,'es');}).map(function(c){return '<option value="'+c.id+'"'+(c.id===form.cid?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+
+    '<option value="__new">+ Clienta nueva</option>';
+  var svcs=db.services.map(function(s){return '<button type="button" class="pick" data-action="pick-svc" data-id="'+s.id+'" aria-pressed="false"><span>'+esc(s.name)+'</span><small>'+s.dur+' min · '+money(s.price)+'</small></button>';}).join('');
+  openSheet('Nueva cita',
+    '<form class="form" id="appt-form" autocomplete="off" novalidate>'+
+      '<label class="field"><span>Clienta</span><select id="f-client">'+clientOpts+'</select></label>'+
+      '<div class="form" id="f-new" hidden>'+contactBtn('appt')+'<div class="two"><label class="field"><span>Nombre</span><input id="f-newname" type="text" placeholder="Nombre y apellido"></label><label class="field"><span>Teléfono</span><input id="f-newphone" type="tel" placeholder="+1 555 000 0000"></label></div></div>'+
+      '<fieldset class="field"><legend>Servicios</legend><div class="picks">'+(svcs||'<p class="hint">Primero crea un servicio en la pestaña Servicios.</p>')+'</div><p class="hint" id="f-total"></p></fieldset>'+
+      '<label class="field"><span>Fecha</span><input id="f-date" type="date" value="'+form.date+'" min="'+today()+'"></label>'+
+      '<fieldset class="field"><legend>Hora</legend><div class="slots" id="f-slots"></div><p class="hint" id="f-hint"></p></fieldset>'+
+      '<label class="field"><span>Nota (opcional)</span><input id="f-note" type="text" placeholder="Diseño, color, referencia…"></label>'+
+      '<button type="submit" class="btn btn-block" id="f-save" disabled>Guardar cita</button>'+
+    '</form>');
+  refreshForm();
+}
+function refreshForm(){
+  if(!form) return;
+  var sel=form.sids.map(service).filter(Boolean);
+  var svc=sel.length?{dur:sel.reduce(function(t,x){return t+x.dur;},0),price:sel.reduce(function(t,x){return t+x.price;},0)}:null;
+  var tot=$('#f-total');
+  if(tot) tot.textContent=svc?sel.length+(sel.length===1?' servicio':' servicios')+' · '+svc.dur+' min · '+money(svc.price):'Puedes elegir más de un servicio.';
+  var hint=$('#f-hint'), box=$('#f-slots');
+  if(!svc||!form.date){
+    form.time='';
+    box.innerHTML=''; hint.textContent=!svc?'Elige al menos un servicio para ver los horarios libres.':'Elige una fecha.';
+  } else {
+    var busy=dayAppts(form.date).filter(function(a){return a.status!=='cancelada';});
+    var now=new Date(), nowM=now.getHours()*60+now.getMinutes(), isToday=form.date===today();
+    var html='', free=0;
+    for(var s=OPEN;s<CLOSE;s+=30){
+      var ok=s+svc.dur<=CLOSE && !(isToday&&s<nowM) && !busy.some(function(b){var bs=toMin(b.time);return s<bs+b.dur&&s+svc.dur>bs;});
+      if(ok) free++;
+      if(form.time===toTime(s)&&!ok) form.time='';
+      html+='<button type="button" class="slot" data-action="pick-time" data-time="'+toTime(s)+'" aria-pressed="'+(form.time===toTime(s))+'"'+(ok?'':' disabled')+'>'+toTime(s)+'</button>';
+    }
+    box.innerHTML=html;
+    hint.textContent=free?svc.dur+' min · abierto de '+toTime(OPEN)+' a '+toTime(CLOSE):'No quedan horarios libres ese día. Prueba otra fecha.';
+  }
+  var hasClient=form.cid&&(form.cid!=='__new'||form.newName.trim());
+  $('#f-save').disabled=!(hasClient&&form.sids.length&&form.date&&form.time);
+}
+function saveAppt(){
+  if(!form||$('#f-save').disabled) return;
+  var cid=form.cid;
+  if(cid==='__new'){
+    cid=uid();
+    db.clients.push({id:cid,name:form.newName.trim(),phone:form.newPhone.trim()});
+  }
+  var ss=form.sids.map(service).filter(Boolean);
+  var s={name:ss.map(function(x){return x.name;}).join(' + '),dur:ss.reduce(function(t,x){return t+x.dur;},0),price:ss.reduce(function(t,x){return t+x.price;},0)};
+  db.appts.push({id:uid(),cid:cid,sids:form.sids.slice(),svc:s.name,dur:s.dur,price:s.price,date:form.date,time:form.time,status:'pendiente',note:form.note.trim(),reminded:false});
+  var d=parse(form.date), time=form.time;
+  selDate=form.date;
+  save(); closeSheet(); renderAll();
+  toast('Cita guardada: '+DAYS[d.getDay()]+' '+d.getDate()+' a las '+time);
+}
+
+/* ---------- formularios de clienta y servicio ---------- */
+function openClientForm(){
+  openSheet('Nueva clienta',
+    '<form class="form" id="client-form" autocomplete="off" novalidate>'+contactBtn('client')+
+    '<label class="field"><span>Nombre</span><input id="c-name" type="text" placeholder="Nombre y apellido" required></label>'+
+    '<label class="field"><span>Teléfono</span><input id="c-phone" type="tel" placeholder="+1 555 000 0000"></label>'+
+    '<button type="submit" class="btn btn-block">Guardar clienta</button></form>');
+  $('#c-name').focus();
+}
+function openSvcForm(id){
+  var s=id?service(id):null;
+  var durs=[15,20,30,45,60,75,90,105,120,150,180];
+  var opts=durs.map(function(d){return '<option value="'+d+'"'+(s&&s.dur===d?' selected':(!s&&d===45?' selected':''))+'>'+d+' min</option>';}).join('');
+  openSheet(s?'Editar servicio':'Nuevo servicio',
+    '<form class="form" id="svc-form" data-id="'+(s?s.id:'')+'" autocomplete="off" novalidate>'+
+    '<label class="field"><span>Nombre</span><input id="s-name" type="text" value="'+esc(s?s.name:'')+'" placeholder="Ej. Kapping gel"></label>'+
+    '<div class="two"><label class="field"><span>Duración</span><select id="s-dur">'+opts+'</select></label>'+
+    '<label class="field"><span>Precio ($)</span><input id="s-price" type="number" inputmode="decimal" min="0" step="1" value="'+(s?s.price:'')+'" placeholder="0"></label></div>'+
+    '<button type="submit" class="btn btn-block">Guardar servicio</button>'+
+    (s?'<button type="button" class="btn btn-danger btn-block" data-action="del-svc" data-id="'+s.id+'" id="s-del">Eliminar servicio</button>':'')+
+    '<p class="hint">Las citas ya agendadas conservan su precio y duración.</p></form>');
+}
+
+/* ---------- Datos: respaldo ---------- */
+ICON.chevL=svg('<path d="m15 6-6 6 6 6"/>',18);
+ICON.chevR=svg('<path d="m9 6 6 6-6 6"/>',18);
+ICON.edit=svg('<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 16z"/><path d="m14.5 7.5 3 3"/>',18);
+ICON.trash=svg('<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>',18);
+ICON.key=svg('<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/>',20);
+ICON.exp=svg('<path d="M12 15V4M8 8l4-4 4 4"/><path d="M4.5 14v4.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V14"/>',20);
+ICON.imp=svg('<path d="M12 4v11M8 11l4 4 4-4"/><path d="M4.5 14v4.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V14"/>',20);
+function backupDays(){return Math.floor((Date.now()-(lastBackup||firstUse))/864e5);}
+function renderData(){
+  var el=$('#data-row'); if(!el) return;
+  var d=backupDays(), due=d>=14;
+  var txt=lastBackup?'Último respaldo: '+(d===0?'hoy':'hace '+d+(d===1?' día':' días')):'Todavía no hay respaldo';
+  el.innerHTML='<div class="data-row"><div class="data-text"><b>Datos</b><span>'+txt+'</span>'+(BUILD.charAt(0)!=='_'?'<span>Versión 1.0.'+esc(BUILD)+'</span>':'')+'<span>'+esc(licLine())+'</span></div>'+
+    '<button class="icon-btn data-btn" data-action="lic-open" aria-label="Licencia">'+ICON.key+'</button>'+
+    '<button class="icon-btn data-btn" data-action="export" aria-label="Exportar respaldo">'+ICON.exp+(due?'<span class="badge"></span>':'')+'</button>'+
+    '<button class="icon-btn data-btn" data-action="import" aria-label="Importar respaldo">'+ICON.imp+'</button></div>';
+}
+function markBackup(){
+  lastBackup=Date.now();
+  try{localStorage.setItem(BKKEY,String(lastBackup));}catch(e){}
+  renderData();
+}
+function buildBackup(){
+  return JSON.stringify({app:'gissy-agenda',version:1,exportedAt:new Date().toISOString(),db:db,qr:qrImg},null,1);
+}
+function exportFallback(json,code){
+  openSheet('Copiar respaldo','<p class="hint">Este teléfono no permite descargar el archivo desde aquí'+(code?' ('+esc(code)+')':'')+'. Copia el texto y guárdalo en una nota o envíatelo por WhatsApp. Para restaurar, pégalo en Importar.</p><textarea id="bk-text" rows="6" readonly aria-label="Texto del respaldo"></textarea><button class="btn btn-block" data-action="copy-backup">Copiar texto</button>');
+  $('#bk-text').value=json;
+}
+function blobDownload(json,name){
+  var url=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+  var a=document.createElement('a'); a.href=url; a.download=name; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+}
+function exportData(){
+  var json=buildBackup(), name='gissy-agenda-'+today()+'.json', p, code='';
+  var cap=window.Capacitor, pl=cap&&cap.Plugins;
+  if(cap&&cap.isNativePlatform&&cap.isNativePlatform()&&pl&&pl.Filesystem&&pl.Share){
+    pl.Filesystem.writeFile({path:name,data:json,directory:'CACHE',encoding:'utf8'}).then(function(r){
+      return pl.Share.share({title:'Respaldo Turnos',files:[r.uri],dialogTitle:'Guardar o enviar respaldo'});
+    }).then(function(){markBackup();toast('Respaldo listo');}).catch(function(err){
+      if(/cancel/i.test(String((err&&err.message)||err))){toast('Cancelado');return;}
+      exportFallback(json,'compartir');
+    });
+    return;
+  }
+  try{p=(window.claude&&window.claude.use)?window.claude.use('downloads'):null;}catch(e){p=null;}
+  Promise.resolve(p).then(function(d){
+    if(d&&d.save){
+      return d.save({filename:name,data:json}).then(function(){markBackup();toast('Respaldo guardado');},function(err){
+        if(err&&err.code==='declined'){toast('Descarga cancelada');return;}
+        exportFallback(json,(err&&err.code)||'error');
+      });
+    }
+    var standalone=false;
+    try{standalone=window.top===window.self;}catch(e){}
+    if(standalone){blobDownload(json,name);markBackup();toast('Respaldo descargado');return;}
+    exportFallback(json,'sin permiso de descarga');
+  }).catch(function(){exportFallback(json,'error');});
+}
+function copyBackup(){
+  var ta=$('#bk-text'); if(!ta) return;
+  function done(){markBackup();toast('Texto copiado');}
+  function legacy(){
+    var ok=false;
+    try{
+      ta.removeAttribute('readonly'); ta.focus(); ta.select(); ta.setSelectionRange(0,ta.value.length);
+      ok=document.execCommand('copy');
+    }catch(e){}
+    ta.setAttribute('readonly','');
+    if(ok) done(); else toast('No se pudo copiar. Mantén pulsado el texto, elige Seleccionar todo y Copiar.');
+  }
+  try{navigator.clipboard.writeText(ta.value).then(done,legacy);}catch(e){legacy();}
+}
+function parseBackup(text){
+  var o; try{o=JSON.parse(String(text).trim());}catch(e){return null;}
+  if(!o||o.app!=='gissy-agenda'||!o.db||!Array.isArray(o.db.services)||!Array.isArray(o.db.clients)||!Array.isArray(o.db.appts)) return null;
+  var str=function(v){return String(v==null?'':v);};
+  var num=function(n){n=+n;return isFinite(n)&&n>=0?n:0;};
+  var sv=o.db.services.filter(function(x){return x&&x.id&&x.name;}).map(function(x){return {id:str(x.id),name:str(x.name),dur:num(x.dur)||30,price:num(x.price)};});
+  var cl=o.db.clients.filter(function(x){return x&&x.id&&x.name;}).map(function(x){var o={id:str(x.id),name:str(x.name),phone:str(x.phone)};var rc=cleanRec(x.rec);if(rc)o.rec=rc;return o;});
+  var ap=o.db.appts.filter(function(a){
+    return a&&a.id&&a.cid&&/^\d{4}-\d{2}-\d{2}$/.test(str(a.date))&&/^\d{2}:\d{2}$/.test(str(a.time))&&Object.prototype.hasOwnProperty.call(STATUS,a.status);
+  }).map(function(a){
+    var r={id:str(a.id),cid:str(a.cid),svc:str(a.svc),dur:num(a.dur)||30,price:num(a.price),date:str(a.date),time:str(a.time),status:a.status,note:str(a.note),reminded:!!a.reminded};
+    if(a.paid!=null&&isFinite(+a.paid)) r.paid=+a.paid;
+    if(Array.isArray(a.sids)) r.sids=a.sids.map(str);
+    return r;
+  });
+  var qr=(typeof o.qr==='string'&&o.qr.indexOf('data:image/')===0)?o.qr:'';
+  return {db:{services:sv,clients:cl,appts:ap},qr:qr,at:str(o.exportedAt)};
+}
+function openImport(msg){
+  pendingImport=null;
+  openSheet('Importar respaldo',
+    '<p class="hint">Elige el archivo .json que guardaste al exportar. Antes de cambiar nada verás un resumen para confirmar.</p>'+
+    '<button class="btn btn-block" data-action="pick-import">Elegir archivo</button>'+
+    '<label class="field"><span>O pega el texto del respaldo</span><textarea id="imp-text" rows="4"></textarea></label>'+
+    '<button class="btn btn-ghost btn-block" data-action="review-paste">Revisar texto pegado</button>'+
+    (msg?'<p class="hint" role="alert" style="color:var(--bad)">'+esc(msg)+'</p>':''));
+}
+function reviewImport(text){
+  var r=parseBackup(text);
+  if(!r){openImport('Ese contenido no es un respaldo de Turnos. No se cambió nada.');return;}
+  pendingImport=r;
+  var when='';
+  if(r.at){var d=new Date(r.at); if(!isNaN(d.getTime())) when=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();}
+  openSheet('Importar respaldo',
+    '<dl class="kv"><div><dt>Clientas</dt><dd>'+r.db.clients.length+'</dd></div><div><dt>Citas</dt><dd>'+r.db.appts.length+'</dd></div><div><dt>Servicios</dt><dd>'+r.db.services.length+'</dd></div>'+(when?'<div><dt>Respaldo del</dt><dd>'+esc(when)+'</dd></div>':'')+'</dl>'+
+    '<p class="hint">Se reemplazarán los datos que hay ahora ('+db.clients.length+' clientas, '+db.appts.length+' citas, '+db.services.length+' servicios). Esto no se puede deshacer.</p>'+
+    '<div class="two"><button class="btn btn-ghost" data-action="close-sheet">Cancelar</button><button class="btn" data-action="apply-import">Reemplazar</button></div>');
+}
+function applyImport(){
+  if(!pendingImport) return;
+  db=pendingImport.db;
+  if(pendingImport.qr){qrImg=pendingImport.qr;try{localStorage.setItem(QRKEY,qrImg);}catch(e){}}
+  pendingImport=null; open={}; selDate=today();
+  save(); closeSheet(); renderAll(); toast('Datos importados');
+}
+
+/* ---------- QR, cobro y contactos ---------- */
+function qrCard(){
+  if(qrImg) return '<button class="qr-card" data-action="show-qr"><img class="qr-thumb" src="'+qrImg+'" alt="QR de pago"><span class="qr-text"><b>Cobrar con QR</b><span>Toca para mostrarlo a la clienta</span></span></button>';
+  return '<button class="qr-card" data-action="pick-qr"><span class="qr-empty">'+ICON.qr+'</span><span class="qr-text"><b>Añadir QR de pago</b><span>Sube la foto de tu QR para tenerlo a mano</span></span></button>';
+}
+function openQr(){
+  openSheet('QR de pago','<img class="qr-big" src="'+qrImg+'" alt="Código QR para pagar"><div class="two"><button class="btn btn-ghost btn-small" data-action="pick-qr">Cambiar foto</button><button class="btn btn-danger btn-small" data-action="del-qr">Quitar</button></div>');
+}
+function handleQrFile(file){
+  if(!file) return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var sc=Math.min(1,1000/Math.max(img.width,img.height));
+      var c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+      var x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+      qrImg=c.toDataURL('image/jpeg',0.92);
+      var saved=true;
+      try{localStorage.setItem(QRKEY,qrImg);}catch(e){saved=false;}
+      if(!$('#sheet').hidden) closeSheet();
+      renderHome();
+      toast(saved?'QR guardado':'QR cargado, pero este navegador no pudo guardarlo');
+    };
+    img.onerror=function(){toast('No se pudo leer esa imagen');};
+    img.src=fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+function openComplete(id){
+  var a=appt(id); if(!a) return;
+  var c=client(a.cid)||{name:'Clienta'};
+  openSheet('Cobrar cita',
+    '<form class="form" id="done-form" data-id="'+a.id+'" novalidate>'+
+    '<div class="rem" style="box-shadow:none;background:var(--bg)">'+avatar(c.name,'sm')+'<div class="rem-main"><b>'+esc(c.name)+'</b><span>'+esc(a.svc)+' · '+a.dur+' min</span></div></div>'+
+    '<label class="field"><span>Cobro ($)</span><input id="d-price" type="number" inputmode="decimal" min="0" step="any" value="'+a.price+'"></label>'+
+    '<p class="hint">Precio estimado del servicio: '+money(a.price)+'. Cámbialo si cobraste otro monto.</p>'+
+    (qrImg?'<button type="button" class="btn btn-ghost btn-block" data-action="reveal-qr">Mostrar QR de pago</button><img id="d-qr" class="qr-big" src="'+qrImg+'" alt="Código QR para pagar" hidden>':'')+
+    '<button type="submit" class="btn btn-block">Confirmar cobro</button></form>');
+}
+function contactBtn(target){
+  return '<button type="button" class="btn btn-ghost btn-block" data-action="pick-contact" data-target="'+target+'">'+ICON.users.replace(/width="24" height="24"/,'width="18" height="18"')+'Elegir de mis contactos</button>';
+}
+function fillContact(target,name,tel){
+  if(target==='appt'&&form){$('#f-newname').value=name;$('#f-newphone').value=tel;form.newName=name;form.newPhone=tel;refreshForm();}
+  else if(target==='edit'&&$('#e-name')){$('#e-name').value=name;$('#e-phone').value=tel;}
+  else if($('#c-name')){$('#c-name').value=name;$('#c-phone').value=tel;}
+}
+function pickContact(target){
+  var msg='No se pudo abrir tus contactos. Escribe los datos a mano.';
+  var cap=window.Capacitor, C=cap&&cap.Plugins&&cap.Plugins.Contacts;
+  if(cap&&cap.isNativePlatform&&cap.isNativePlatform()&&C&&C.pickContact){
+    var go=function(){return C.pickContact({projection:{name:true,phones:true}});};
+    go().catch(function(err){
+      if(/permission/i.test(String((err&&err.message)||err))&&C.requestPermissions){return Promise.resolve(C.requestPermissions()).then(go);}
+      throw err;
+    }).then(function(r){
+      var c=r&&r.contact; if(!c) return;
+      var n=c.name||{};
+      var name=n.display||[n.given,n.family].filter(Boolean).join(' ');
+      var ph=c.phones&&c.phones[0];
+      fillContact(target,name||'',(ph&&ph.number)||'');
+    }).catch(function(err){
+      var why=String((err&&err.message)||err||'');
+      if(/cancel|dismiss/i.test(why)) return;
+      toast(msg+(why?' ('+why.slice(0,160)+')':''));
+    });
+    return;
+  }
+  try{
+    if(!(navigator.contacts&&navigator.contacts.select)){toast('Este navegador no permite abrir tus contactos. Escribe los datos a mano.');return;}
+    navigator.contacts.select(['name','tel'],{multiple:false}).then(function(r){
+      if(!r||!r.length) return;
+      fillContact(target,(r[0].name&&r[0].name[0])||'',(r[0].tel&&r[0].tel[0])||'');
+    }).catch(function(){toast(msg);});
+  }catch(e){toast(msg);}
+}
+
+/* ---------- Editar y eliminar clienta ---------- */
+function openClientEdit(id){
+  var c=client(id); if(!c) return;
+  openSheet('Editar clienta',
+    '<form class="form" id="edit-client-form" data-id="'+c.id+'" autocomplete="off" novalidate>'+contactBtn('edit')+
+    '<label class="field"><span>Nombre</span><input id="e-name" type="text" value="'+esc(c.name)+'"></label>'+
+    '<label class="field"><span>Teléfono</span><input id="e-phone" type="tel" value="'+esc(c.phone||'')+'"></label>'+
+    '<div class="sec-label" style="margin-bottom:-6px">Recurrencia</div>'+recFieldsHTML('e',c.rec,1)+
+    '<button type="submit" class="btn btn-block">Guardar cambios</button></form>');
+}
+function openClientDelete(id){
+  var c=client(id); if(!c) return;
+  var n=db.appts.filter(function(a){return a.cid===id;}).length;
+  openSheet('Eliminar clienta',
+    '<p>¿Eliminar a <b>'+esc(c.name)+'</b>?'+(n?' También se borrarán sus '+n+(n===1?' cita':' citas')+'.':'')+' Esto no se puede deshacer.</p>'+
+    '<div class="two"><button class="btn btn-ghost" data-action="close-sheet">Cancelar</button><button class="btn btn-danger" data-action="confirm-del-client" data-id="'+c.id+'">Eliminar</button></div>');
+}
+
+/* ---------- recurrencia ---------- */
+function recText(r){
+  if(!r) return '';
+  return r.unit==='semanas'?'Cada '+(r.n===1?'semana':r.n+' semanas')+' · '+DAYS[r.wd]:'Cada '+(r.n===1?'día':r.n+' días');
+}
+function recFieldsHTML(p,rec,defWd){
+  var fr=rec?rec.unit:'none', n=rec?rec.n:2, wd=rec?rec.wd:defWd;
+  var wdOpts=[1,2,3,4,5,6,0].map(function(d){return '<option value="'+d+'"'+(d===wd?' selected':'')+'>'+cap(DAYS[d])+'</option>';}).join('');
+  return '<label class="field"><span>Frecuencia</span><select id="'+p+'-freq">'+
+      '<option value="none"'+(fr==='none'?' selected':'')+'>No repetir (esporádica)</option>'+
+      '<option value="dias"'+(fr==='dias'?' selected':'')+'>Días</option>'+
+      '<option value="semanas"'+(fr==='semanas'?' selected':'')+'>Semanas</option></select></label>'+
+    '<div class="two" id="'+p+'-opts"'+(fr==='none'?' hidden':'')+'>'+
+      '<label class="field"><span>Cada <small id="'+p+'-unit">('+(fr==='semanas'?'semanas':'días')+')</small></span><input id="'+p+'-n" type="number" inputmode="numeric" min="1" max="365" value="'+n+'"></label>'+
+      '<label class="field" id="'+p+'-wdbox"'+(fr==='semanas'?'':' hidden')+'><span>Día</span><select id="'+p+'-wd">'+wdOpts+'</select></label>'+
+    '</div>';
+}
+function readRec(p){
+  var fr=$('#'+p+'-freq').value; if(fr==='none') return null;
+  return cleanRec({unit:fr,n:parseInt($('#'+p+'-n').value,10),wd:parseInt(($('#'+p+'-wd')||{}).value,10)});
+}
+function nextByRec(from,r){
+  var step=r.unit==='semanas'?7*r.n:r.n, t=today(), d, g=0;
+  if(r.unit==='semanas'){
+    var b=parse(addDays(from,7*r.n)), dow=(b.getDay()+6)%7;
+    b.setDate(b.getDate()-dow+((r.wd+6)%7)); d=iso(b);
+  } else d=addDays(from,r.n);
+  while(d<t&&g++<500) d=addDays(d,step);
+  return d;
+}
+function freeSlots(date,dur){
+  var busy=dayAppts(date).filter(function(a){return a.status!=='cancelada';});
+  var now=new Date(), nowM=now.getHours()*60+now.getMinutes(), isToday=date===today(), out=[];
+  for(var s=OPEN;s<CLOSE;s+=30){
+    if(s+dur>CLOSE) continue;
+    if(isToday&&s<nowM) continue;
+    if(busy.some(function(b){var bs=toMin(b.time);return s<bs+b.dur&&s+dur>bs;})) continue;
+    out.push(toTime(s));
+  }
+  return out;
+}
+var nx=null;
+function slotsHTML(date,dur,sel){
+  var busy=dayAppts(date).filter(function(a){return a.status!=='cancelada';});
+  var now=new Date(), nowM=now.getHours()*60+now.getMinutes(), isToday=date===today(), html='', free=[];
+  for(var m=OPEN;m<CLOSE;m+=30){
+    var ok=m+dur<=CLOSE&&!(isToday&&m<nowM)&&!busy.some(function(b){var bs=toMin(b.time);return m<bs+b.dur&&m+dur>bs;});
+    if(ok) free.push(toTime(m));
+    html+='<button type="button" class="slot" data-action="nx-time" data-time="'+toTime(m)+'" aria-pressed="'+(sel===toTime(m))+'"'+(ok?'':' disabled')+'>'+toTime(m)+'</button>';
+  }
+  return {html:html,free:free};
+}
+function openNext(aid){
+  var a=appt(aid); if(!a) return;
+  var c=client(a.cid); if(!c) return;
+  var r=c.rec;
+  nx={aid:a.id,cid:c.id,svc:a.svc,dur:a.dur,price:a.price,sids:a.sids||null,pref:a.time,
+      mode:r?'prog':'manual',unit:r?r.unit:'semanas',n:r?r.n:2,wd:r?r.wd:parse(a.date).getDay(),date:'',time:''};
+  var wdOpts=[1,2,3,4,5,6,0].map(function(d){return '<option value="'+d+'"'+(d===nx.wd?' selected':'')+'>'+cap(DAYS[d])+'</option>';}).join('');
+  openSheet('Próxima cita',
+    '<p class="hint">¿Cuándo vuelve <b>'+esc(c.name)+'</b>? Mismo servicio: '+esc(a.svc)+'. Si es esporádica, pulsa «Ahora no».</p>'+
+    '<div class="form">'+
+    '<div class="picks two" id="nx-modes" role="group" aria-label="Tipo de próxima cita">'+
+      '<button type="button" class="pick big" data-action="nx-mode" data-m="manual" aria-pressed="false"><span>Manual</span><small>Fecha que pide la clienta</small></button>'+
+      '<button type="button" class="pick big" data-action="nx-mode" data-m="prog" aria-pressed="false"><span>Programada</span><small>Se repite cada cierto tiempo</small></button></div>'+
+    '<div class="form" id="nx-prog" hidden>'+
+      '<fieldset class="field"><legend>Frecuencia</legend><div class="picks two" id="nx-units">'+
+        '<button type="button" class="pick" data-action="nx-unit" data-u="semanas" aria-pressed="false"><span>Semanas</span></button>'+
+        '<button type="button" class="pick" data-action="nx-unit" data-u="dias" aria-pressed="false"><span>Días</span></button></div></fieldset>'+
+      '<div class="two"><label class="field"><span>Cada <small id="n-unit"></small></span><input id="n-n" type="number" inputmode="numeric" min="1" max="365" value="'+nx.n+'"></label>'+
+      '<label class="field" id="n-wdbox"><span>Día</span><select id="n-wd">'+wdOpts+'</select></label></div></div>'+
+    '<label class="field"><span>Fecha</span><input id="n-date" type="date" min="'+today()+'"></label>'+
+    '<fieldset class="field"><legend>Hora</legend><div class="slots" id="n-slots"></div><p class="hint" id="n-hint"></p></fieldset>'+
+    '<button type="button" class="btn btn-block" id="n-save" data-action="nx-save" disabled>Agendar próxima cita</button>'+
+    '<button type="button" class="btn btn-ghost btn-block" data-action="close-sheet">Ahora no</button></div>');
+  nxRecalc();
+}
+function nxRecalc(){
+  if(!nx) return;
+  var prog=nx.mode==='prog';
+  $('#nx-prog').hidden=!prog;
+  document.querySelectorAll('#nx-modes .pick').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.m===nx.mode));});
+  document.querySelectorAll('#nx-units .pick').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.u===nx.unit));});
+  $('#n-unit').textContent='('+(nx.unit==='semanas'?'semanas':'días')+')';
+  $('#n-wdbox').hidden=nx.unit!=='semanas';
+  if(prog){var a=appt(nx.aid); nx.date=nextByRec(a?a.date:today(),{unit:nx.unit,n:nx.n,wd:nx.wd});}
+  $('#n-date').value=nx.date;
+  nxRefresh();
+}
+function nxRefresh(){
+  if(!nx) return;
+  var box=$('#n-slots'), hint=$('#n-hint'), sv=$('#n-save');
+  if(!nx.date){nx.time='';box.innerHTML=slotsHTML(today(),nx.dur,'').html.replace(/ disabled/g,' disabled');box.querySelectorAll('.slot').forEach(function(b){b.disabled=true;});hint.textContent='Elige la fecha que pide la clienta.';sv.disabled=true;return;}
+  var r=slotsHTML(nx.date,nx.dur,nx.time);
+  if(r.free.length&&r.free.indexOf(nx.time)<0){
+    var pm=toMin(nx.pref); nx.time=r.free.slice().sort(function(x,y){return Math.abs(toMin(x)-pm)-Math.abs(toMin(y)-pm);})[0];
+    r=slotsHTML(nx.date,nx.dur,nx.time);
+  }
+  if(!r.free.length) nx.time='';
+  box.innerHTML=r.html;
+  var d=parse(nx.date);
+  hint.textContent=!r.free.length?'No quedan horarios libres ese día. Prueba otra fecha.':
+    cap(DAYS[d.getDay()])+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+' · '+nx.time+' – '+toTime(toMin(nx.time)+nx.dur)+' ('+nx.dur+' min)'+(nx.time===nx.pref?' · misma hora':'');
+  sv.disabled=!(nx.date&&nx.time);
+}
+function saveNext(){
+  if(!nx||!nx.date||!nx.time) return;
+  var c=client(nx.cid); if(!c) return;
+  if(nx.mode==='prog') c.rec=cleanRec({unit:nx.unit,n:nx.n,wd:nx.wd});
+  db.appts.push({id:uid(),cid:c.id,sids:nx.sids||undefined,svc:nx.svc,dur:nx.dur,price:nx.price,date:nx.date,time:nx.time,status:'pendiente',note:'',reminded:false});
+  var d=parse(nx.date), time=nx.time; selDate=nx.date;
+  save(); closeSheet(); renderAll();
+  toast('Próxima cita: '+DAYS[d.getDay()]+' '+d.getDate()+' a las '+time);
+}
+
+/* ---------- editar servicios de una cita ---------- */
+var ed=null;
+function apptSids(a){
+  if(Array.isArray(a.sids)&&a.sids.length) return a.sids.filter(function(i){return service(i);});
+  var out=[];
+  String(a.svc).split(' + ').forEach(function(n){var sv=db.services.filter(function(x){return x.name===n;})[0];if(sv&&out.indexOf(sv.id)<0)out.push(sv.id);});
+  return out;
+}
+function openApptEdit(id){
+  var a=appt(id); if(!a) return;
+  var c=client(a.cid)||{name:'Clienta'};
+  ed={id:a.id,sids:apptSids(a)};
+  var svcs=db.services.map(function(sv){return '<button type="button" class="pick" data-action="ed-svc" data-id="'+sv.id+'" aria-pressed="'+(ed.sids.indexOf(sv.id)>-1)+'"><span>'+esc(sv.name)+'</span><small>'+sv.dur+' min · '+money(sv.price)+'</small></button>';}).join('');
+  openSheet('Editar cita',
+    '<div class="form"><div class="rem" style="box-shadow:none;background:var(--bg)">'+avatar(c.name,'sm')+'<div class="rem-main"><b>'+esc(c.name)+'</b><span>'+esc(longDay(a.date))+' · '+a.time+'</span></div></div>'+
+    '<fieldset class="field"><legend>Servicios</legend><div class="picks">'+(svcs||'<p class="hint">No hay servicios creados.</p>')+'</div><p class="hint" id="ed-total"></p></fieldset>'+
+    '<div id="ed-shift"></div>'+
+    '<label class="field"><span>Nota <small>(opcional)</small></span><input id="ed-note" type="text" value="'+esc(a.note||'')+'"></label>'+
+    '<button type="button" class="btn btn-block" id="ed-save" data-action="ed-save">Guardar cambios</button></div>');
+  edRefresh();
+}
+function longDay(ds){var d=parse(ds);return cap(DAYS[d.getDay()])+' '+d.getDate()+' de '+MONTHS[d.getMonth()];}
+function edCalc(){
+  var a=appt(ed.id), sel=ed.sids.map(service).filter(Boolean);
+  var dur=sel.reduce(function(t,x){return t+x.dur;},0), price=sel.reduce(function(t,x){return t+x.price;},0);
+  var cur=toMin(a.time)+dur, moves=[], over=cur>CLOSE;
+  var later=dayAppts(a.date).filter(function(b){return b.id!==a.id&&isLive(b)&&toMin(b.time)>=toMin(a.time);}).sort(function(x,y){return toMin(x.time)-toMin(y.time);});
+  later.forEach(function(b){
+    var st=toMin(b.time);
+    if(st<cur){moves.push({b:b,from:b.time,to:toTime(cur)});st=cur;}
+    cur=st+b.dur; if(cur>CLOSE) over=true;
+  });
+  return {sel:sel,dur:dur,price:price,name:sel.map(function(x){return x.name;}).join(' + '),moves:moves,over:over};
+}
+function edRefresh(){
+  if(!ed) return;
+  var r=edCalc(), a=appt(ed.id);
+  $('#ed-total').textContent=r.sel.length?r.sel.length+(r.sel.length===1?' servicio':' servicios')+' · '+r.dur+' min · '+money(r.price)+' · termina a las '+toTime(toMin(a.time)+r.dur):'Elige al menos un servicio.';
+  var h='';
+  if(r.moves.length){
+    h+='<div class="notice" style="display:block;margin:0"><b>Se correrán '+r.moves.length+(r.moves.length===1?' cita':' citas')+' de ese día:</b><ul class="shift" style="margin-top:6px">'+
+      r.moves.map(function(m){var c=client(m.b.cid)||{name:'Clienta'};return '<li>'+esc(c.name)+': <b>'+m.from+'</b> → <b>'+m.to+'</b></li>';}).join('')+'</ul></div>';
+  }
+  if(r.over) h+='<div class="notice bad" style="display:block;margin:0">Con este cambio la jornada termina después de las '+toTime(CLOSE)+'.</div>';
+  $('#ed-shift').innerHTML=h;
+  $('#ed-save').disabled=!r.sel.length;
+}
+function saveApptEdit(){
+  if(!ed) return;
+  var a=appt(ed.id); if(!a) return;
+  var r=edCalc(); if(!r.sel.length) return;
+  a.svc=r.name; a.dur=r.dur; a.price=r.price; a.sids=ed.sids.slice(); a.note=($('#ed-note').value||'').trim();
+  r.moves.forEach(function(m){m.b.time=m.to;m.b.reminded=false;});
+  var n=r.moves.length;
+  save(); closeSheet(); renderAll();
+  toast('Cita actualizada'+(n?' · '+n+(n===1?' cita movida':' citas movidas')+'. Avisa a las clientas':''));
+}
+
+/* ---------- reservas en línea (Firebase, solo REST, sin librerías) ---------- */
+var FB={apiKey:'AIzaSyC7jMYaBtoZk0Z_SrNvYDEaUlYfu0L8qT8',pid:'gestion-turnos-salon'};
+var WEB_URL='https://paradox91-ux1.github.io/gissy-agenda/';
+var FS='https://firestore.googleapis.com/v1/projects/'+FB.pid+'/databases/(default)/documents';
+var OLKEY='turnos-online-v1', PUBKEY='turnos-pub-v1';
+var ol={email:'',refresh:'',id:'',exp:0,cfg:{name:'Mi salón',wa:'',cur:'CUP',days:[1,2,3,4,5,6],published:false},reqs:[],last:0,err:''};
+var pubState={}, pubTimer=0, pubBusy=false, pollTimer=0;
+try{var _o=JSON.parse(localStorage.getItem(OLKEY)||'null');if(_o&&typeof _o==='object'){ol.email=_o.email||'';ol.refresh=_o.refresh||'';ol.id=_o.id||'';ol.exp=+_o.exp||0;if(_o.cfg)ol.cfg=Object.assign(ol.cfg,_o.cfg);ol.reqs=Array.isArray(_o.reqs)?_o.reqs:[];}
+  pubState=JSON.parse(localStorage.getItem(PUBKEY)||'{}')||{};}catch(e){}
+function olSave(){try{localStorage.setItem(OLKEY,JSON.stringify({email:ol.email,refresh:ol.refresh,id:ol.id,exp:ol.exp,cfg:ol.cfg,reqs:ol.reqs}));}catch(e){}}
+function pubSave(){try{localStorage.setItem(PUBKEY,JSON.stringify(pubState));}catch(e){}}
+function toFS(v){
+  if(typeof v==='string') return {stringValue:v};
+  if(typeof v==='boolean') return {booleanValue:v};
+  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+  if(Array.isArray(v)) return {arrayValue:{values:v.map(toFS)}};
+  var f={};Object.keys(v).forEach(function(k){f[k]=toFS(v[k]);});return {mapValue:{fields:f}};
+}
+function fromFS(x){
+  if('stringValue' in x) return x.stringValue;
+  if('integerValue' in x) return +x.integerValue;
+  if('doubleValue' in x) return x.doubleValue;
+  if('booleanValue' in x) return x.booleanValue;
+  if('arrayValue' in x) return (x.arrayValue.values||[]).map(fromFS);
+  if('mapValue' in x){var o={},f=x.mapValue.fields||{};Object.keys(f).forEach(function(k){o[k]=fromFS(f[k]);});return o;}
+  return null;
+}
+function docObj(d){var o={},f=(d&&d.fields)||{};Object.keys(f).forEach(function(k){o[k]=fromFS(f[k]);});o._id=d&&d.name?d.name.split('/').pop():'';return o;}
+function jfetch(url,opts){return fetch(url,opts).then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok){var e=new Error((j&&j.error&&j.error.message)||('http '+r.status));e.status=r.status;throw e;}return j;});});}
+function olToken(){
+  if(ol.id&&Date.now()<ol.exp-60000) return Promise.resolve(ol.id);
+  if(!ol.refresh) return Promise.reject(new Error('sin sesión'));
+  return jfetch('https://securetoken.googleapis.com/v1/token?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(ol.refresh)}).then(function(j){
+    ol.id=j.id_token;ol.refresh=j.refresh_token||ol.refresh;ol.exp=Date.now()+(+j.expires_in||3600)*1000;olSave();return ol.id;
+  }).catch(function(e){if(e.status===400||e.status===401){ol.refresh='';ol.id='';olSave();}throw e;});
+}
+function fsCall(path,method,body){
+  return olToken().then(function(tk){
+    return jfetch(FS+path,{method:method||'GET',headers:{'Authorization':'Bearer '+tk,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  });
+}
+function olLogin(){
+  var em=($('#ol-email').value||'').trim(), pw=$('#ol-pass').value||'', msg=$('#ol-msg');
+  if(!em||!pw){msg.textContent='Escribe el correo y la contraseña.';return;}
+  msg.textContent='Conectando…';
+  jfetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw,returnSecureToken:true})}).then(function(j){
+    ol.email=em;ol.id=j.idToken;ol.refresh=j.refreshToken;ol.exp=Date.now()+(+j.expiresIn||3600)*1000;olSave();
+    toast('Conectado');openOnline();renderAll();olPoll();
+  }).catch(function(e){msg.textContent=/INVALID|EMAIL|PASSWORD|CREDENTIAL/i.test(e.message)?'Correo o contraseña incorrectos.':'No se pudo conectar. Revisa tu conexión.';});
+}
+function olLogout(){ol.id='';ol.refresh='';ol.exp=0;ol.reqs=[];ol.cfg.published=false;pubState={};olSave();pubSave();clearTimeout(pollTimer);closeSheet();renderAll();toast('Sesión cerrada');}
+function olOn(){return !!ol.refresh;}
+/* catálogo y horas ocupadas */
+function catalogDoc(){
+  return {name:ol.cfg.name||'Mi salón',cur:ol.cfg.cur||'CUP',open:OPEN,close:CLOSE,step:30,wa:(ol.cfg.wa||'').replace(/\D/g,''),days:ol.cfg.days.slice().sort(),
+    services:db.services.map(function(x){return {id:x.id,name:x.name,dur:x.dur,price:x.price};}),updatedAt:Date.now()};
+}
+function busyItems(ds){return db.appts.filter(function(a){return a.date===ds&&isLive(a);}).sort(function(x,y){return toMin(x.time)-toMin(y.time);}).map(function(a){return a.time+'|'+a.dur;});}
+function schedulePublish(){
+  if(!olOn()||!ol.cfg.published) return;
+  clearTimeout(pubTimer); pubTimer=setTimeout(function(){publishAll(false);},4000);
+}
+function publishAll(force){
+  if(pubBusy||!olOn()) return Promise.resolve();
+  var writes=[], marks={}, base='projects/'+FB.pid+'/databases/(default)/documents/';
+  var cat=catalogDoc(), catKey=JSON.stringify(Object.assign({},cat,{updatedAt:0}));
+  if(force||pubState._cat!==catKey){var cf={};Object.keys(cat).forEach(function(k){cf[k]=toFS(cat[k]);});writes.push({update:{name:base+'public/catalog',fields:cf}});marks._cat=catKey;}
+  var d=today();
+  for(var i=0;i<62;i++){
+    var items=busyItems(d), key=items.join(',');
+    if(force||pubState[d]!==key){writes.push({update:{name:base+'busy/'+d,fields:{items:toFS(items)}}});marks[d]=key;}
+    d=addDays(d,1);
+  }
+  if(!writes.length) return Promise.resolve();
+  pubBusy=true;
+  return olToken().then(function(tk){
+    return jfetch('https://firestore.googleapis.com/v1/projects/'+FB.pid+'/databases/(default)/documents:commit',{method:'POST',headers:{'Authorization':'Bearer '+tk,'Content-Type':'application/json'},body:JSON.stringify({writes:writes})});
+  }).then(function(){Object.keys(marks).forEach(function(k){pubState[k]=marks[k];});pubSave();ol.err='';ol.last=Date.now();}).catch(function(e){ol.err=e.message||'error';throw e;}).then(function(){pubBusy=false;},function(e){pubBusy=false;throw e;});
+}
+/* solicitudes entrantes */
+function olPoll(){
+  clearTimeout(pollTimer);
+  if(!olOn()) return;
+  fsCall(':runQuery','POST',{structuredQuery:{from:[{collectionId:'requests'}],where:{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:{stringValue:'nueva'}}},limit:50}}).then(function(rows){
+    var list=(rows||[]).filter(function(r){return r.document;}).map(function(r){return docObj(r.document);}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+    var before=ol.reqs.length;
+    ol.reqs=list; ol.err=''; ol.last=Date.now(); olSave();
+    renderHome(); renderServices();
+    if(list.length>before&&before>=0&&list.length>0&&document.hidden===false) toast('Nueva solicitud de reserva');
+  }).catch(function(e){ol.err=e.message||'error';}).then(function(){pollTimer=setTimeout(olPoll,60000);});
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&olOn())olPoll();});
+function reqBanner(){
+  if(!olOn()||!ol.reqs.length) return '';
+  return '<div class="notice" style="background:var(--brand-soft);color:var(--brand)"><span><b>'+ol.reqs.length+'</b> '+(ol.reqs.length===1?'solicitud de reserva nueva':'solicitudes de reserva nuevas')+'</span><button data-action="req-open">Ver</button></div>';
+}
+function renderOnlineCard(){
+  var el=$('#online-card'); if(!el) return;
+  if(!olOn()){el.innerHTML='<div class="notice" style="background:var(--brand-soft);color:var(--brand);margin-bottom:14px"><span>Reservas en línea: tus clientas piden cita desde un enlace.</span><button data-action="ol-open">Configurar</button></div>';return;}
+  el.innerHTML='<div class="notice" style="background:var(--brand-soft);color:var(--brand);margin-bottom:14px"><span>Reservas en línea '+(ol.cfg.published?'activas':'sin publicar')+(ol.reqs.length?' · '+ol.reqs.length+' pendientes':'')+'</span><span style="display:flex;gap:12px">'+(ol.reqs.length?'<button data-action="req-open">Solicitudes</button>':'')+'<button data-action="ol-open">Ajustes</button></span></div>';
+}
+var DAY3=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+function openOnline(){
+  if(!olOn()){
+    openSheet('Reservas en línea',
+      '<p class="hint">Conecta con la cuenta de la dueña para publicar tus servicios y recibir solicitudes de reserva.</p>'+
+      '<label class="field"><span>Correo</span><input id="ol-email" type="email" autocomplete="username" value="'+esc(ol.email)+'"></label>'+
+      '<label class="field"><span>Contraseña</span><input id="ol-pass" type="password" autocomplete="current-password"></label>'+
+      '<button class="btn btn-block" data-action="ol-login">Conectar</button><p class="hint" id="ol-msg" role="alert"></p>');
+    return;
+  }
+  var chips=[1,2,3,4,5,6,0].map(function(d){return '<button type="button" class="chip" data-action="ol-day" data-d="'+d+'" aria-pressed="'+(ol.cfg.days.indexOf(d)>-1)+'">'+DAY3[d]+'</button>';}).join('');
+  openSheet('Reservas en línea',
+    '<p class="hint">Conectada como <b>'+esc(ol.email)+'</b>.'+(ol.err?' <span style="color:var(--bad)">Último error: '+esc(ol.err)+'</span>':'')+'</p>'+
+    '<label class="field"><span>Nombre del salón</span><input id="ol-name" type="text" value="'+esc(ol.cfg.name)+'" maxlength="60"></label>'+
+    '<div class="two"><label class="field"><span>Moneda</span><input id="ol-cur" type="text" value="'+esc(ol.cfg.cur)+'" maxlength="8"></label>'+
+    '<label class="field"><span>WhatsApp <small>(opcional)</small></span><input id="ol-wa" type="tel" value="'+esc(ol.cfg.wa)+'" placeholder="+53 5…"></label></div>'+
+    '<fieldset class="field"><legend>Días que atiendes</legend><div class="daychips">'+chips+'</div></fieldset>'+
+    '<button class="btn btn-block" data-action="ol-publish">'+(ol.cfg.published?'Guardar y publicar':'Publicar reservas')+'</button><p class="hint" id="ol-msg" role="status"></p>'+
+    '<div><div class="sec-label">Enlace para tus clientas</div><div class="code-box" style="font-size:13px">'+esc(WEB_URL)+'</div></div>'+
+    '<div class="actions"><button class="btn btn-ghost btn-small" data-action="ol-copy">Copiar enlace</button><a class="btn btn-ghost btn-small" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent('Reserva tu cita aquí: '+WEB_URL)+'">'+ICON.chat+'Compartir</a></div>'+
+    '<button class="link" data-action="ol-logout" style="color:var(--bad)">Cerrar sesión</button>');
+}
+function olToggleDay(d,el){
+  var i=ol.cfg.days.indexOf(d); if(i>-1) ol.cfg.days.splice(i,1); else ol.cfg.days.push(d);
+  el.setAttribute('aria-pressed',String(ol.cfg.days.indexOf(d)>-1));
+}
+function olSaveCfg(){
+  var msg=$('#ol-msg');
+  ol.cfg.name=($('#ol-name').value||'').trim()||'Mi salón'; ol.cfg.cur=($('#ol-cur').value||'').trim()||'CUP'; ol.cfg.wa=($('#ol-wa').value||'').trim();
+  if(!ol.cfg.days.length){msg.textContent='Elige al menos un día.';return;}
+  if(!db.services.length){msg.textContent='Primero crea al menos un servicio.';return;}
+  ol.cfg.published=true; olSave(); msg.textContent='Publicando…';
+  publishAll(true).then(function(){msg.textContent='Publicado. Tus clientas ya pueden reservar.';renderAll();olPoll();}).catch(function(e){ol.cfg.published=false;olSave();msg.textContent='No se pudo publicar: '+(e.message||'error')+'. Revisa la conexión y las reglas de Firestore.';});
+}
+function reqConflict(r){
+  return dayAppts(r.date).some(function(a){return isLive(a)&&toMin(r.time)<toMin(a.time)+a.dur&&toMin(r.time)+r.dur>toMin(a.time);});
+}
+function openRequests(){
+  if(!ol.reqs.length){openSheet('Solicitudes','<div class="empty"><b>Sin solicitudes</b>Cuando una clienta reserve desde el enlace, aparecerá aquí.</div>');return;}
+  var h=ol.reqs.map(function(r){
+    var conf=reqConflict(r), d=parse(r.date), past=r.date<today();
+    var ph=String(r.phone||'').replace(/\D/g,'');
+    return '<div class="req'+(conf?' conf':'')+'"><b>'+esc(r.name)+'</b>'+
+      '<span class="meta">'+esc(cap(DAYS[d.getDay()])+' '+d.getDate()+' de '+MONTHS[d.getMonth()])+' · '+esc(r.time)+' – '+toTime(toMin(r.time)+r.dur)+'</span>'+
+      '<span>'+esc(r.svc)+' · '+r.dur+' min · '+money(r.price)+'</span>'+
+      (r.note?'<span class="meta">Nota: '+esc(r.note)+'</span>':'')+
+      '<span class="meta">'+esc(r.phone)+'</span>'+
+      (conf?'<span style="color:var(--bad);font-size:13px;font-weight:600">Esa hora ya está ocupada en tu agenda.</span>':'')+
+      (past?'<span style="color:var(--bad);font-size:13px;font-weight:600">La fecha ya pasó.</span>':'')+
+      '<div class="actions"><button class="btn btn-small" data-action="req-accept" data-id="'+esc(r._id)+'"'+(conf||past?' disabled':'')+'>Aceptar</button>'+
+      '<button class="btn btn-danger btn-small" data-action="req-reject" data-id="'+esc(r._id)+'">Rechazar</button>'+
+      (ph?'<a class="btn btn-ghost btn-small" target="_blank" rel="noopener" href="https://wa.me/'+ph+'">'+ICON.chat+'</a>':'')+'</div></div>';
+  }).join('');
+  openSheet('Solicitudes de reserva','<div class="list">'+h+'</div>');
+}
+function reqPatch(id,status){
+  return fsCall('/requests/'+id+'?updateMask.fieldPaths=status','PATCH',{fields:{status:{stringValue:status}}});
+}
+function acceptReq(id){
+  var r=ol.reqs.filter(function(x){return x._id===id;})[0]; if(!r) return;
+  if(reqConflict(r)){toast('Esa hora ya está ocupada');return;}
+  var digits=String(r.phone||'').replace(/\D/g,''), tail=digits.slice(-8), c=null;
+  if(tail.length>=7) c=db.clients.filter(function(x){return (x.phone||'').replace(/\D/g,'').slice(-8)===tail;})[0];
+  if(!c){c={id:uid(),name:String(r.name).trim(),phone:String(r.phone||'').trim()};db.clients.push(c);}
+  var sids=(Array.isArray(r.sids)?r.sids:[]).filter(function(i){return service(i);});
+  db.appts.push({id:uid(),cid:c.id,sids:sids.length?sids:undefined,svc:String(r.svc),dur:+r.dur||30,price:+r.price||0,date:r.date,time:r.time,status:'pendiente',note:String(r.note||''),reminded:false});
+  save(); selDate=r.date;
+  reqPatch(id,'confirmada').catch(function(){});
+  ol.reqs=ol.reqs.filter(function(x){return x._id!==id;}); olSave(); renderAll();
+  var d=parse(r.date), ph=digits;
+  var msg='Hola '+String(r.name).split(' ')[0]+', tu cita de '+r.svc+' quedó confirmada para el '+DAYS[d.getDay()]+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+' a las '+r.time+'. ¡Te esperamos!';
+  openSheet('Cita aceptada','<p>Se agregó a tu agenda: <b>'+esc(r.name)+'</b>, '+esc(DAYS[d.getDay()])+' '+d.getDate()+' a las '+esc(r.time)+'.</p><p class="hint">La clienta verá la confirmación en la web de reservas. Si quieres, avísale también por WhatsApp.</p>'+
+    (ph?'<a class="btn btn-block" target="_blank" rel="noopener" href="https://wa.me/'+ph+'?text='+encodeURIComponent(msg)+'">'+ICON.chat+'Avisar por WhatsApp</a>':'')+
+    (ol.reqs.length?'<button class="btn btn-ghost btn-block" data-action="req-back">Ver otras solicitudes ('+ol.reqs.length+')</button>':'<button class="btn btn-ghost btn-block" data-action="close-sheet">Cerrar</button>'));
+}
+function rejectReq(id){
+  var r=ol.reqs.filter(function(x){return x._id===id;})[0]; if(!r) return;
+  reqPatch(id,'rechazada').catch(function(){});
+  ol.reqs=ol.reqs.filter(function(x){return x._id!==id;}); olSave(); renderHome(); renderServices();
+  var d=parse(r.date), ph=String(r.phone||'').replace(/\D/g,'');
+  var msg='Hola '+String(r.name).split(' ')[0]+', no pudimos agendar tu cita el '+DAYS[d.getDay()]+' '+d.getDate()+' a las '+r.time+'. ¿Te sirve otra hora u otro día?';
+  openSheet('Solicitud rechazada','<p class="hint">La clienta verá que esa hora no pudo agendarse. Puedes proponerle otra por WhatsApp.</p>'+
+    (ph?'<a class="btn btn-block" target="_blank" rel="noopener" href="https://wa.me/'+ph+'?text='+encodeURIComponent(msg)+'">'+ICON.chat+'Proponer otra hora</a>':'')+
+    (ol.reqs.length?'<button class="btn btn-ghost btn-block" data-action="req-back">Ver otras solicitudes ('+ol.reqs.length+')</button>':'<button class="btn btn-ghost btn-block" data-action="close-sheet">Cerrar</button>'));
+}
+
+/* ---------- licencia ---------- */
+var LIC_PUB={"kty":"EC","crv":"P-256","x":"YEZFFvkHgZAIPk_jJoShWutNxie3TYqMBwYJPQ6RHGY","y":"DqIw2BqwLlE5BjXcMTBo4JTr0fj2Nzsdlhm3uvqzq0Y","ext":true};
+var TRIAL_DAYS=30, FADE_DAYS=14, WARN_DAYS=7, DAY=864e5, TEST_MODE=false, simDays=0;
+var TRKEY='gissy-trial-v1', LCKEY='gissy-lic-v1', SEENKEY='gissy-seen-v1', DEVKEY='gissy-dev-v1';
+var lic={ready:false,supported:true,devHex:'',devShow:'',exp:0,paid:false,key:null};
+var trialStart=0, seen=0;
+try{
+  trialStart=+localStorage.getItem(TRKEY)||0;
+  if(!trialStart){trialStart=Date.now();localStorage.setItem(TRKEY,String(trialStart));}
+  seen=+localStorage.getItem(SEENKEY)||0;
+}catch(e){trialStart=Date.now();}
+function nowMs(){
+  var n=Date.now();
+  if(TEST_MODE) return n+simDays*DAY;
+  return n<seen?seen:n;
+}
+function touchSeen(){var n=nowMs(); if(!TEST_MODE&&n>seen){seen=n;try{localStorage.setItem(SEENKEY,String(seen));}catch(e){}}}
+function b64u(b){var x='';for(var i=0;i<b.length;i++)x+=String.fromCharCode(b[i]);return btoa(x).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function unb64u(t){t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';var x=atob(t),o=new Uint8Array(x.length);for(var i=0;i<x.length;i++)o[i]=x.charCodeAt(i);return o;}
+function hexOf(b){var h='';for(var i=0;i<b.length;i++)h+=(b[i]<16?'0':'')+b[i].toString(16);return h.toUpperCase();}
+function webDevId(){var v='';try{v=localStorage.getItem(DEVKEY)||'';if(!v){v='web-'+uid()+uid()+uid();localStorage.setItem(DEVKEY,v);}}catch(e){v='web-fallback';}return v;}
+function rawDeviceId(){
+  var cap=window.Capacitor, D=cap&&cap.Plugins&&cap.Plugins.Device;
+  if(cap&&cap.isNativePlatform&&cap.isNativePlatform()&&D&&D.getId){
+    return D.getId().then(function(r){return (r&&r.identifier)||webDevId();}).catch(function(){return webDevId();});
+  }
+  return Promise.resolve(webDevId());
+}
+function sha256(str){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(str)).then(function(b){return new Uint8Array(b);});}
+function readCodes(){try{var a=JSON.parse(localStorage.getItem(LCKEY)||'[]');return Array.isArray(a)?a.filter(function(x){return typeof x==='string';}):[];}catch(e){return [];}}
+function checkCode(code){
+  var raw; try{raw=unb64u(String(code).replace(/\s+/g,''));}catch(e){return Promise.resolve({ok:false,why:'formato'});}
+  if(raw.length!==75) return Promise.resolve({ok:false,why:'formato'});
+  var body=raw.slice(0,11), sig=raw.slice(11), msg=new Uint8Array(14);
+  msg.set(body,0); msg.set(new TextEncoder().encode('GI1'),11);
+  return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},lic.key,sig,msg).then(function(ok){
+    if(!ok) return {ok:false,why:'firma'};
+    if(hexOf(body.slice(0,8))!==lic.devHex) return {ok:false,why:'otro'};
+    var days=(body[8]<<8)|body[9];
+    return {ok:true,issued:Date.UTC(2020,0,1)+days*DAY,months:body[10]};
+  }).catch(function(){return {ok:false,why:'firma'};});
+}
+function recompute(){
+  return Promise.all(readCodes().map(checkCode)).then(function(rs){
+    var ok=rs.filter(function(r){return r.ok&&r.months>0;}).sort(function(a,b){return a.issued-b.issued;});
+    var exp=trialStart+TRIAL_DAYS*DAY; lic.paid=false;
+    ok.forEach(function(r){var d=new Date(Math.max(exp,r.issued)); d.setMonth(d.getMonth()+r.months); exp=d.getTime(); lic.paid=true;});
+    lic.exp=exp; lic.ready=true;
+  });
+}
+function licState(){
+  if(!lic.ready||!lic.supported) return {kind:'ok',fade:1,left:9999};
+  var n=nowMs();
+  if(n<=lic.exp) return {kind:lic.paid?'paid':'trial',fade:1,left:Math.ceil((lic.exp-n)/DAY)};
+  return {kind:'expired',fade:Math.max(0,1-((n-lic.exp)/DAY)/FADE_DAYS),left:0};
+}
+function fmtDate(ms){var d=new Date(ms);return d.getDate()+' '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getFullYear();}
+function licLine(){
+  var s=licState();
+  if(s.kind==='ok') return 'Licencia: comprobando…';
+  if(s.kind==='trial') return 'Prueba gratuita: quedan '+s.left+(s.left===1?' día':' días');
+  if(s.kind==='paid') return 'Licencia activa hasta '+fmtDate(lic.exp);
+  return 'Licencia vencida';
+}
+function licBanner(){
+  var s=licState();
+  if(s.kind==='expired') return '<div class="notice bad"><span>Licencia vencida. Actívala para seguir usando la app.</span><button data-action="lic-open">Activar</button></div>';
+  if((s.kind==='trial'||s.kind==='paid')&&s.left<=WARN_DAYS){
+    return '<div class="notice"><span>'+(s.kind==='trial'?'Tu prueba gratuita termina':'Tu licencia vence')+(s.left<=1?(s.left===1?' mañana':' hoy'):' en '+s.left+' días')+'.</span><button data-action="lic-open">'+(s.kind==='trial'?'Activar':'Renovar')+'</button></div>';
+  }
+  return '';
+}
+function applyFade(){
+  var s=licState();
+  document.documentElement.style.setProperty('--fade',String(s.fade));
+  document.body.classList.toggle('blank',s.fade<=0.02);
+  document.body.classList.toggle('fading',s.fade<1);
+}
+function licRefresh(){touchSeen();applyFade();renderHome();renderData();}
+function copyText(text,okMsg){
+  function legacy(){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand('copy');}catch(e){}document.body.removeChild(ta);toast(ok?okMsg:'No se pudo copiar. Mantén pulsado el texto y elige Copiar.');}
+  try{navigator.clipboard.writeText(text).then(function(){toast(okMsg);},legacy);}catch(e){legacy();}
+}
+function openLicense(){
+  if(!lic.ready){toast('Un momento, comprobando la licencia…');return;}
+  var wa='https://wa.me/?text='+encodeURIComponent('Hola, quiero activar mi licencia de Turnos. Mi ID de dispositivo es: '+lic.devShow);
+  openSheet('Licencia',
+    '<p>'+esc(licLine())+'</p>'+
+    '<div><div class="sec-label">ID de este teléfono</div><div class="code-box">'+esc(lic.devShow)+'</div></div>'+
+    '<div class="actions"><button class="btn btn-ghost btn-small" data-action="lic-copy-id">Copiar ID</button><a class="btn btn-ghost btn-small" href="'+esc(wa)+'" target="_blank" rel="noopener">'+ICON.chat+'Enviar por WhatsApp</a></div>'+
+    '<p class="hint">Envía este ID a quien te vendió la app y te dará un código. El código solo funciona en este teléfono.</p>'+
+    '<label class="field"><span>Código de activación</span><textarea id="lic-code" rows="3" placeholder="Pega aquí el código"></textarea></label>'+
+    '<button class="btn btn-block" data-action="lic-activate">Activar</button><p class="hint" id="lic-msg" role="alert"></p>');
+}
+function activateLicense(){
+  var code=($('#lic-code').value||'').replace(/\s+/g,''), msg=$('#lic-msg');
+  if(!code){msg.textContent='Pega el código que recibiste.';return;}
+  checkCode(code).then(function(r){
+    if(!r.ok){msg.textContent=r.why==='otro'?'Este código es de otro teléfono y no se puede usar aquí.':r.why==='formato'?'El código está incompleto o no es válido. Cópialo completo.':'El código no es válido.';return;}
+    var codes=readCodes();
+    if(codes.indexOf(code)>-1){msg.textContent='Este código ya estaba activado.';return;}
+    codes.push(code); try{localStorage.setItem(LCKEY,JSON.stringify(codes));}catch(e){}
+    return recompute().then(function(){closeSheet();licRefresh();toast('Licencia activa hasta '+fmtDate(lic.exp));});
+  });
+}
+function initLicense(){
+  if(!(window.crypto&&crypto.subtle)){lic.supported=false;lic.ready=true;lic.devShow='no disponible';return;}
+  rawDeviceId().then(function(raw){return sha256('gissy|'+raw);}).then(function(h){
+    lic.devHex=hexOf(h.slice(0,8)); lic.devShow=lic.devHex.match(/.{4}/g).join('-');
+    return crypto.subtle.importKey('jwk',LIC_PUB,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+  }).then(function(k){lic.key=k;return recompute();}).then(licRefresh).catch(function(){lic.supported=false;lic.ready=true;licRefresh();});
+}
+var lpT=0;
+function lpStart(){clearTimeout(lpT);if(licState().fade<1&&$('#sheet').hidden)lpT=setTimeout(openLicense,1500);}
+function lpStop(){clearTimeout(lpT);}
+document.addEventListener('touchstart',lpStart,{passive:true});
+document.addEventListener('mousedown',lpStart);
+['touchend','touchmove','touchcancel','mouseup','mouseleave'].forEach(function(ev){document.addEventListener(ev,lpStop,{passive:true});});
+setInterval(licRefresh,60000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)licRefresh();});
+if(TEST_MODE){
+  var sb=document.createElement('div');sb.className='simbar';
+  sb.innerHTML='<span>PRUEBA · simular +días:</span><input id="sim-days" type="number" value="0"><span id="sim-info"></span>';
+  document.body.appendChild(sb);
+  $('#sim-days').addEventListener('input',function(){simDays=parseInt(this.value,10)||0;licRefresh();$('#sim-info').textContent='fade '+licState().fade.toFixed(2);});
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-action]'); if(!el) return;
+  var a=el.dataset.action, id=el.dataset.id;
+  switch(a){
+    case 'nav': show(el.dataset.view); break;
+    case 'goto-today': selDate=today(); renderCal(); show('calendario'); break;
+    case 'toggle':
+      open[id]=!open[id];
+      el.setAttribute('aria-expanded',String(!!open[id]));
+      var body=el.nextElementSibling; if(body) body.hidden=!open[id];
+      break;
+    case 'status':
+      var ap=appt(id); if(!ap) break;
+      ap.status=el.dataset.status; if(ap.status!=='hecha') delete ap.paid; save(); renderAll();
+      toast(ap.status==='hecha'?'Cita completada':ap.status==='cancelada'?'Cita cancelada':ap.status==='confirmada'?'Cita confirmada':'Cita reabierta');
+      break;
+    case 'remind':
+      setTimeout(function(){var r=appt(id); if(r){r.reminded=true; save(); renderAll();}},300);
+      break;
+    case 'pick-day': selDate=el.dataset.date; renderCal(); break;
+    case 'cal-tab': calTab=el.dataset.tab; renderCal(); break;
+    case 'go-hist': calTab='historial'; histMonth=el.dataset.date.slice(0,7); renderCal(); window.scrollTo(0,0); break;
+    case 'hist-filter': histFilter=el.dataset.f; renderCal(); break;
+    case 'hist-prev':
+    case 'hist-next':
+      var hy=+histMonth.slice(0,4), hm=+histMonth.slice(5,7)-1+(a==='hist-next'?1:-1), hd=new Date(hy,hm,1);
+      histMonth=hd.getFullYear()+'-'+pad(hd.getMonth()+1); renderCal(); break;
+    case 'pick-month':
+      var p=el.dataset.ym.split('-').map(Number);
+      var dim=new Date(p[0],p[1]+1,0).getDate();
+      var dd=Math.min(parse(selDate).getDate(),dim);
+      selDate=p[0]+'-'+pad(p[1]+1)+'-'+pad(dd);
+      renderCal(); break;
+    case 'new-appt': openApptForm(view==='calendario'?selDate:today()); break;
+    case 'appt-for': openApptForm(today(),id); break;
+    case 'close-sheet': closeSheet(); break;
+    case 'pick-svc':
+      if(!form) break;
+      var ix=form.sids.indexOf(id);
+      if(ix>-1) form.sids.splice(ix,1); else form.sids.push(id);
+      el.setAttribute('aria-pressed',String(form.sids.indexOf(id)>-1));
+      refreshForm(); break;
+    case 'pick-time':
+      if(!form) break;
+      form.time=el.dataset.time;
+      document.querySelectorAll('.slot').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.time===form.time));});
+      refreshForm(); break;
+    case 'new-client': openClientForm(); break;
+    case 'edit-client': openClientEdit(id); break;
+    case 'del-client': openClientDelete(id); break;
+    case 'confirm-del-client':
+      db.clients=db.clients.filter(function(c){return c.id!==id;});
+      db.appts=db.appts.filter(function(a){return a.cid!==id;});
+      delete open[id]; save(); closeSheet(); renderAll(); toast('Clienta eliminada'); break;
+    case 'complete': openComplete(id); break;
+    case 'ol-open': openOnline(); break;
+    case 'ol-login': olLogin(); break;
+    case 'ol-logout': olLogout(); break;
+    case 'ol-publish': olSaveCfg(true); break;
+    case 'ol-day': olToggleDay(+el.dataset.d,el); break;
+    case 'ol-copy': copyText(WEB_URL,'Enlace copiado'); break;
+    case 'req-open': openRequests(); break;
+    case 'req-accept': acceptReq(id); break;
+    case 'req-reject': rejectReq(id); break;
+    case 'req-back': openRequests(); break;
+    case 'nx-save': saveNext(); break;
+    case 'nx-mode': if(nx){nx.mode=el.dataset.m;nxRecalc();} break;
+    case 'nx-unit': if(nx){nx.unit=el.dataset.u;nxRecalc();} break;
+    case 'nx-time': if(nx){nx.time=el.dataset.time;nxRefresh();} break;
+    case 'edit-appt': openApptEdit(id); break;
+    case 'ed-svc':
+      if(!ed) break;
+      var ei=ed.sids.indexOf(id); if(ei>-1) ed.sids.splice(ei,1); else ed.sids.push(id);
+      document.querySelectorAll('[data-action="ed-svc"]').forEach(function(b){b.setAttribute('aria-pressed',String(ed.sids.indexOf(b.dataset.id)>-1));});
+      edRefresh(); break;
+    case 'ed-save': saveApptEdit(); break;
+    case 'lic-open': openLicense(); break;
+    case 'lic-copy-id': copyText(lic.devShow,'ID copiado'); break;
+    case 'lic-activate': activateLicense(); break;
+    case 'reveal-qr': var q=$('#d-qr'); if(q){q.hidden=!q.hidden; el.textContent=q.hidden?'Mostrar QR de pago':'Ocultar QR';} break;
+    case 'show-qr': openQr(); break;
+    case 'pick-qr': $('#qr-file').click(); break;
+    case 'del-qr':
+      qrImg=''; try{localStorage.removeItem(QRKEY);}catch(er){}
+      closeSheet(); renderHome(); toast('QR eliminado'); break;
+    case 'pick-contact': pickContact(el.dataset.target); break;
+    case 'export': exportData(); break;
+    case 'import': openImport(); break;
+    case 'pick-import': $('#imp-file').click(); break;
+    case 'review-paste': reviewImport(($('#imp-text')||{}).value||''); break;
+    case 'apply-import': applyImport(); break;
+    case 'copy-backup': copyBackup(); break;
+    case 'new-svc': openSvcForm(); break;
+    case 'edit-svc': openSvcForm(id); break;
+    case 'del-svc':
+      if(el.dataset.armed!=='1'){el.dataset.armed='1'; el.textContent='Toca de nuevo para eliminar'; break;}
+      db.services=db.services.filter(function(s){return s.id!==id;});
+      save(); closeSheet(); renderServices(); toast('Servicio eliminado'); break;
+  }
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.id==='q') return renderClients();
+  if(t.id==='n-n'){ if(nx){nx.n=Math.max(1,Math.min(365,parseInt(t.value,10)||1));nxRecalc();} return; }
+  if(t.id==='e-n') return;
+  if(!form) return;
+  if(t.id==='f-newname'){form.newName=t.value;refreshForm();}
+  else if(t.id==='f-newphone'){form.newPhone=t.value;}
+  else if(t.id==='f-note'){form.note=t.value;}
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.id==='e-freq'){
+    var eo=$('#e-opts'); if(eo) eo.hidden=t.value==='none';
+    var ew=$('#e-wdbox'); if(ew) ew.hidden=t.value!=='semanas';
+    var eu=$('#e-unit'); if(eu) eu.textContent=t.value==='semanas'?'(semanas)':'(días)';
+    return;
+  }
+  if(t.id==='n-wd'){ if(nx){nx.wd=+t.value;nxRecalc();} return; }
+  if(t.id==='n-date'){ if(nx){nx.date=t.value;nxRefresh();} return; }
+  if(t.id==='qr-file'){handleQrFile(t.files&&t.files[0]);t.value='';return;}
+  if(t.id==='imp-file'){
+    var bf=t.files&&t.files[0]; t.value='';
+    if(bf){var rd=new FileReader(); rd.onload=function(){reviewImport(rd.result);}; rd.onerror=function(){openImport('No se pudo leer el archivo.');}; rd.readAsText(bf);}
+    return;
+  }
+  if(!form) return;
+  if(t.id==='f-client'){form.cid=t.value;$('#f-new').hidden=t.value!=='__new';refreshForm();}
+  else if(t.id==='f-date'){form.date=t.value;form.time='';refreshForm();}
+});
+document.addEventListener('submit',function(e){
+  e.preventDefault();
+  var f=e.target;
+  if(f.id==='appt-form') return saveAppt();
+  if(f.id==='done-form'){
+    var ap=appt(f.dataset.id); if(!ap) return;
+    var pr=parseFloat($('#d-price').value);
+    if(isNaN(pr)||pr<0){$('#d-price').focus();return;}
+    ap.paid=pr; ap.status='hecha';
+    save(); closeSheet(); renderAll(); toast('Cobro registrado: '+money(pr)+'. La cita quedó en Historial');
+    openNext(ap.id);
+    return;
+  }
+  if(f.id==='edit-client-form'){
+    var ec=client(f.dataset.id), en=$('#e-name').value.trim();
+    if(!ec) return;
+    if(!en){$('#e-name').focus();return;}
+    ec.name=en; ec.phone=$('#e-phone').value.trim();
+    var rr=readRec('e'); if(rr) ec.rec=rr; else delete ec.rec;
+    save(); closeSheet(); renderAll(); toast('Cambios guardados');
+    return;
+  }
+  if(f.id==='client-form'){
+    var name=$('#c-name').value.trim();
+    if(!name){$('#c-name').focus();return;}
+    db.clients.push({id:uid(),name:name,phone:$('#c-phone').value.trim()});
+    save(); closeSheet(); renderClients(); toast('Clienta añadida');
+  }
+  if(f.id==='svc-form'){
+    var n=$('#s-name').value.trim();
+    if(!n){$('#s-name').focus();return;}
+    var price=parseFloat($('#s-price').value); if(isNaN(price)||price<0) price=0;
+    var dur=parseInt($('#s-dur').value,10), sid=f.dataset.id;
+    if(sid){var s=service(sid); s.name=n; s.dur=dur; s.price=price;}
+    else db.services.push({id:uid(),name:n,dur:dur,price:price});
+    save(); closeSheet(); renderServices(); toast('Servicio guardado');
+  }
+});
+var sx=0,sy=0,sOK=false;
+document.addEventListener('touchstart',function(e){
+  sOK=false;
+  if(view!=='calendario'||calTab!=='agenda'||!$('#sheet').hidden||e.touches.length!==1||(e.target.closest&&e.target.closest('#mtabs,#days'))) return;
+  sx=e.touches[0].clientX;sy=e.touches[0].clientY;sOK=true;
+},{passive:true});
+document.addEventListener('touchend',function(e){
+  if(!sOK) return; sOK=false;
+  var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5) return;
+  selDate=addDays(selDate,dx<0?1:-1); renderCal();
+},{passive:true});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('#sheet').hidden) closeSheet();});
+window.addEventListener('hashchange',function(){show(location.hash.slice(1),true);});
+
+$('#btn-new-client').innerHTML=ICON.plus;
+renderAll();
+initLicense();
+if(olOn()) olPoll();
+show(VIEWS.indexOf(location.hash.slice(1))>-1?location.hash.slice(1):'inicio',true);
+})();
+</script>
+</body>
+</html>
