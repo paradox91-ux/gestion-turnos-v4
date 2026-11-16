@@ -8,6 +8,8 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -97,3 +99,12 @@ jobs:
         with:
           name: Turnos-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publicar enlace de descarga
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Turnos.apk
+          gh release view descarga >/dev/null 2>&1 || gh release create descarga --title "Turnos - ultima version" --notes "Descarga Turnos.apk e instalala en tu telefono."
+          gh release upload descarga Turnos.apk --clobber
