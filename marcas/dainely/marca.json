@@ -1,0 +1,24 @@
+{
+  "id": "dainely",
+  "appId": "com.dainelysecret.turnos",
+  "appName": "DainelySecret",
+  "salon": "DainelySecret",
+  "archivoApk": "DainelySecret.apk",
+  "release": "descarga-dainely",
+  "fondoIcono": "#C83F66",
+  "paleta": {
+    "claro": {
+      "bg": "#FBF4F6", "surface": "#FFFFFF", "ink": "#2E1F26", "muted": "#725F68", "line": "#F0DEE4",
+      "brand": "#C83F66", "on-brand": "#FFFFFF", "brand-soft": "#FBE3EA",
+      "pop": "#8A2A55", "on-pop": "#FFFFFF", "pop-soft": "#F6DCE8",
+      "hero": "#C83F66", "on-hero": "#FFFFFF", "hero-line": "rgba(255,255,255,.42)",
+      "shadow": "0 1px 2px rgba(46,31,38,.06),0 8px 22px rgba(46,31,38,.08)"
+    },
+    "oscuro": {
+      "bg": "#1B1015", "surface": "#28191F", "ink": "#F8ECEF", "muted": "#BBA5AD", "line": "#3C2A32",
+      "brand": "#F28BA9", "on-brand": "#2B0E18", "brand-soft": "#4A2230",
+      "pop": "#D94476", "on-pop": "#FFFFFF", "pop-soft": "#4A2030",
+      "hero": "#5A2438", "on-hero": "#F8ECEF", "hero-line": "rgba(248,236,239,.34)"
+    }
+  }
+}
