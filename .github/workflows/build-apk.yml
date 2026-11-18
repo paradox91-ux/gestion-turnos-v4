@@ -8,6 +8,10 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        marca: [turnos, dainely]
     permissions:
       contents: write
     steps:
@@ -25,6 +29,9 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
+      - name: Aplicar marca (${{ matrix.marca }})
+        run: node scripts/aplicar-marca.js ${{ matrix.marca }}
+
       - name: Copiar fuentes
         run: |
           mkdir -p www/fonts
@@ -41,12 +48,12 @@ jobs:
 
       - name: Generar iconos
         continue-on-error: true
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#4B2E73' --iconBackgroundColorDark '#4B2E73'
+        run: npx @capacitor/assets generate --android --iconBackgroundColor "$MARCA_FONDO" --iconBackgroundColorDark "$MARCA_FONDO"
 
       - name: Arreglar fondo del icono
         run: |
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">' '  <solid android:color="#4B2E73"/>' '</shape>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_background.xml
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">' "  <solid android:color=\"$MARCA_FONDO\"/>" '</shape>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_background.xml
 
       - name: Numero de version
         run: |
@@ -97,7 +104,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Turnos-apk
+          name: Turnos-${{ matrix.marca }}-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publicar enlace de descarga
@@ -105,6 +112,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Turnos.apk
-          gh release view descarga >/dev/null 2>&1 || gh release create descarga --title "Turnos - ultima version" --notes "Descarga Turnos.apk e instalala en tu telefono."
-          gh release upload descarga Turnos.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$MARCA_APK"
+          gh release view "$MARCA_TAG" >/dev/null 2>&1 || gh release create "$MARCA_TAG" --title "$MARCA_NOMBRE - ultima version" --notes "Descarga $MARCA_APK e instalala en tu telefono."
+          gh release upload "$MARCA_TAG" "$MARCA_APK" --clobber
