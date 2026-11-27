@@ -1812,7 +1812,7 @@ function setReportes(){
     '<div class="kpis">'+
     '<div class="stat"><b>'+money(income)+'</b><span>Ingresos</span></div>'+
     '<div class="stat"><b>'+done.length+'</b><span>Citas atendidas</span></div>'+
-    '<div class="stat"><b>'+money(ticket)+'</b><span>Cobro por cita</span></div>'+
+    '<div class="stat"><b>'+money(Math.round(ticket))+'</b><span>Cobro por cita</span></div>'+
     '<div class="stat"><b>'+Object.keys(clientsN).length+'</b><span>Clientas atendidas</span></div>'+
     '<div class="stat"><b>'+fresh+'</b><span>Clientas nuevas</span></div>'+
     '<div class="stat"><b>'+cancPct+'%</b><span>Cancelaciones</span></div></div>'+
